@@ -1,0 +1,1 @@
+# Capturas, informes, diagramas

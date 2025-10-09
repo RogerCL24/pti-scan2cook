@@ -43,7 +43,7 @@ El sistema está compuesto por varios módulos conectados mediante una arquitect
 
 ## 🛠️ Requisitos previos
 
-Antes de empezar, asegúrate de tener instalado en tu equipo:
+Antes de empezar, asegúraos de tener instalado en tu equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
@@ -59,11 +59,44 @@ Abre tu terminal o Visual Studio Code y ejecuta:
 
 ```bash
 # 1. Crear una carpeta para tus proyectos (solo la primera vez)
-mkdir ~/Proyectos
-cd ~/Proyectos
+mkdir ~/Proyecto
+cd ~/Proyecto
 
 # 2. Clonar el repositorio
-git clone https://github.com/<usuario>/scan2cook.git
+git clone https://github.com/RogerCL24/scan2cook.git
 
 # 3. Entrar en la carpeta del proyecto
-cd scan2cook
+cd pti-scan2cook
+```
+
+### 2️⃣ Estructura del proyecto
+
+```
+scan2cook/
+ ├── backend/        → Servidor Node.js (API REST)
+ ├── frontend/       → Interfaz React
+ ├── ocr/            → Scripts para lectura OCR
+ ├── database/       → Scripts SQL y estructura inicial
+ ├── docker/         → Archivos Docker y configuración
+ ├── docs/           → Capturas, informes, diagramas
+ └── README.md       → Este archivo
+ ```
+
+ ### 3️⃣ Por qué usamos Docker 🐳
+ Docker permite que todo el equipo trabaje con el mismo entorno, sin depender del sistema operativo de cada uno.
+Ejemplo: si en un PC PostgreSQL está en la versión 14 y en otro en la 16, puede fallar.
+Con Docker, todos usan el mismo contenedor exacto, garantizando compatibilidad total.
+
+Ventajas:
+
+- Entorno idéntico para todos.
+
+- No necesita instalar PostgreSQL ni Node globalmente.
+
+- Despliegue instantáneo con docker-compose up.
+
+- Aísla servicios (base de datos, backend, OCR…).
+
+### 📚 Créditos
+Proyecto desarrollado por el grupo Scan2Cook – PTI 2025.
+Universitat Politecnica de Catalunya, Departament de Tecnologies de la Informació.
