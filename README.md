@@ -43,7 +43,7 @@ El sistema está compuesto por varios módulos conectados mediante una arquitect
 
 ## 🛠️ Requisitos previos
 
-Antes de empezar, asegúraos de tener instalado en tu equipo:
+Antes de empezar, asegúraos de tener instalado en vuestro equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
@@ -103,4 +103,4 @@ Ventajas:
 
 ### 📚 Créditos
 Proyecto desarrollado por el grupo Scan2Cook – PTI 2025.
-Universitat Politecnica de Catalunya, Departament de Tecnologies de la Informació.
+[Universitat Politecnica de Catalunya](https://github.com/UPC), Departament de Tecnologies de la Informació.

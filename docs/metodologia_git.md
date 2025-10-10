@@ -3,6 +3,7 @@ Este documento explica cómo deberiamos trabajar con GitHub: cómo crear ramas, 
 
 ## Estructura de ramas del proyecto
 ``main`` → Rama principal (solo código funcional y probado).
+
 ``Ramas individuales`` → Cada miembro del grupo trabaja en su propia rama.
 
 
@@ -21,7 +22,7 @@ Ejemplo:
 ### 1️⃣ Clonar el repositorio (solo una vez, ya lo habréis hecho maybe):
 ```bash
 git clone https://github.com/RogerCL24/scan2cook.git
-cd scan2cook
+cd pti-scan2cook
 ```
 
 ### 2️⃣ Actualizar el repositorio local (cada día antes de trabajar):
@@ -46,6 +47,7 @@ git checkout -b irene-frontend
 ```bash
 git push origin nombre-rama
 ```
+Ejemplo:
 ```bash
 git push origin irene-frontend
 ```
