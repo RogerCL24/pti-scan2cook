@@ -71,17 +71,30 @@ cd pti-scan2cook
 
 ### 2️⃣ Estructura del proyecto
 
+```mermaid
+graph TD
+  A[Scan2Cook] --> B[backend]
+  A --> C[frontend]
+  A --> D[database]
+  A --> E[docker]
+  A --> F[docs]
+  A --> G[ocr]
+  
+  B --> B1[server.js]
+  B --> B2[Dockerfile]
+  B --> B3[package.json]
+  
+  D --> D1[init.sql]
+  D --> D2[seed.sql]
+  
+  F --> F1[instalacion_docker_windows.md]
+  F --> F2[metodologia_git.md]
+  F --> F3[README.md]
+  
+  A --> H[docker-compose.yml]
+  A --> I[README.md]
+  A --> J[.gitignore]
 ```
-scan2cook/
- ├── backend/        → Servidor Node.js (API REST)
- ├── frontend/       → Interfaz React
- ├── ocr/            → Scripts para lectura OCR
- ├── database/       → Scripts SQL y estructura inicial
- ├── docker/         → Archivos Docker y configuración
- ├── docs/           → Capturas, informes, diagramas
- └── README.md       → Este archivo
- ```
-> Más en [project_structure.md](docs/project_structure.md)
 
 ### 3️⃣ Cómo trabajar (guía)
 1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
