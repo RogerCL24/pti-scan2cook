@@ -47,7 +47,7 @@ Antes de empezar, asegúraos de tener instalado en tu equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Docker Desktop](docs/instalacion-docker-windows.md)
 - Visual Studio Code (recomendado)
 
 ---
@@ -81,9 +81,13 @@ scan2cook/
  ├── docs/           → Capturas, informes, diagramas
  └── README.md       → Este archivo
  ```
+> Más en [project_structure.md](docs/project_structure.md)
 
- ### 3️⃣ Por qué usamos Docker 🐳
- Docker permite que todo el equipo trabaje con el mismo entorno, sin depender del sistema operativo de cada uno.
+### 3️⃣ Cómo trabajar (guía)
+1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
+
+### Por qué usamos Docker 🐳
+Docker permite que todo el equipo trabaje con el mismo entorno, sin depender del sistema operativo de cada uno.
 Ejemplo: si en un PC PostgreSQL está en la versión 14 y en otro en la 16, puede fallar.
 Con Docker, todos usan el mismo contenedor exacto, garantizando compatibilidad total.
 
