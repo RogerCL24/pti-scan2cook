@@ -73,8 +73,12 @@ Para salir `exit`.
 
  <p align="center">
       
- <img src=""/>
+<img width="1920" height="1080" alt="Captura de pantalla de 2025-10-12 12-35-07" src="https://github.com/user-attachments/assets/2f073c43-49b8-4fa9-a8c1-d85066f9d39e" />
+
+Output esperado
  </p>
+
+ 
 
 ## 6. Comandos útiles
 | Acción                     | Comando                                                      |
