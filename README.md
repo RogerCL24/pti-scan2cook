@@ -66,7 +66,7 @@ mkdir ~/Proyecto
 cd ~/Proyecto
 
 # 2. Clonar el repositorio
-git clone https://github.com/RogerCL24/scan2cook.git
+git clone https://github.com/RogerCL24/pti-scan2cook.git
 
 # 3. Entrar en la carpeta del proyecto
 cd pti-scan2cook
