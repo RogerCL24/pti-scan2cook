@@ -17,6 +17,10 @@ Ejemplo:
 
 ---
 
+## Instalaos la extension `GitHub Pull Requests`
+1. En VScode id a extensiones > Buscad 'GitHub Pull Requests' > Instalar
+2. En la a 
+
 ## Flujo de trabajo recomendado (Git Flow simplificado)
 
 ### 1️⃣ Clonar el repositorio (solo una vez, ya lo habréis hecho maybe):
