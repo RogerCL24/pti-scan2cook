@@ -17,9 +17,13 @@ Ejemplo:
 
 ---
 
-## Instalaos la extension `GitHub Pull Requests`
-1. En VScode id a extensiones > Buscad 'GitHub Pull Requests' > Instalar
-2. En la a 
+## Instalaos la extension `GitHub Pull Requests` 
+1. En VSCode id a extensiones > Buscad 'GitHub Pull Requests' > Instalar
+2. En la a barra lateral de la izquierda darle al gatito de github y hacer el Sign In.
+
+> [!NOTE]
+> Para push (subir cambios), GitHub siempre requiere autenticación, incluso en repos públicos, porque debes probar que eres el propietario o un colaborador autorizado. No puedes push anónimamente. 
+> Tenéis esta opción con la extensión o con SSH (o HTTPS, pero es un engorro).
 
 ## Flujo de trabajo recomendado (Git Flow simplificado)
 
