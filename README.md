@@ -47,10 +47,13 @@ Antes de empezar, asegúraos de tener instalado en vuestro equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
-- [Docker Desktop](docs/instalacion-docker-windows.md)
+- [Docker](docs/instalacion-docker-windows.md)
 - Visual Studio Code (recomendado)
 
 ---
+
+> [!TIP]
+> Recomiendo hacerlo en **Linux**, docker es mucho más fácil de instalar ahí.
 
 ## 📦 Instrucciones de instalación
 
