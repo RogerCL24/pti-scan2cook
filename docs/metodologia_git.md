@@ -17,13 +17,75 @@ Ejemplo:
 
 ---
 
-## Instalaos la extension `GitHub Pull Requests` 
-1. En VSCode id a extensiones > Buscad 'GitHub Pull Requests' > Instalar
-2. En la a barra lateral de la izquierda darle al gatito de github y hacer el Sign In.
+## Hacer push con Linux (SSH)
 
-> [!NOTE]
-> Para push (subir cambios), GitHub siempre requiere autenticación, incluso en repos públicos, porque debes probar que eres el propietario o un colaborador autorizado. No puedes push anónimamente. 
-> Tenéis esta opción con la extensión o con SSH (o HTTPS, pero es un engorro).
+1. Comprobad si ya tienes una clave SSH (debe estar en SSH keys de GitHub también eh)
+```bash
+ls -al ~/.ssh
+```
+Deberiais ver (si ya teneis una clave generada): `id_rsa  id_rsa.pub` o `id_ed25519  id_ed25519.pub`.
+
+Si no, vamos a los siguientes pasos.
+
+2. Genera una nueva clave SSH
+Ejecutad:
+```bash
+ssh-keygen -t ed25519 -C "tu_email_de_github@example.com"
+```
+_(reemplaza el correo por el de tu GitHub)_
+Cuando te pregunte dónde guardar:
+- Dale Enter (usa la ruta por defecto ~/.ssh/id_ed25519).
+- Cuando te pida passphrase, puedes dejarlo vacío o poner una contraseña.
+
+3. Inicia el agente SSH y añade la clave
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+4. Copia tu clave pública
+Ejecutad:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+Copiad todo lo que aparece (empieza con ssh-ed25519 y termina con vuestro correo).
+
+5. Añade la clave a tu cuenta de GitHub
+- Ve a 👉 https://github.com/settings/keys
+- Clic en New SSH key
+- Ponle un título
+- Pega tu clave pública en el campo “Key”
+- Guarda
+
+6. Cambia la URL del repositorio a SSH
+En el directorio `pti-scan2cook`
+```bash
+git remote set-url origin git@github.com:RogerCL24/pti-scan2cook.git
+```
+
+7. Probad la conexión SSH
+```bash
+ssh -T git@github.com
+```
+El output deberia ser:
+```bash
+Hi RogerCL24! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+Ya podéis hacer `git push` :smile:
+
+## Hacer push con Windows (helper de GitHub)
+1. Instala el Git Credential Manager (GCM):
+```bash
+sudo apt install git-credential-manager
+```
+2. Ahora debe usarlo git:
+```bash
+git config --global credential.helper manager
+```
+3. Ahora si haces `git push`, se abrirá una ventana o navegador para loguearte en GitHub.
+
+
 
 ## Flujo de trabajo recomendado (Git Flow simplificado)
 
