@@ -22,3 +22,5 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/scan2cook
     depends_on:
       - db
+volumes:
+  postgres_data:
