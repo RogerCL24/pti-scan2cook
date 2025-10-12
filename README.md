@@ -87,7 +87,7 @@ graph TD
   D --> D1[init.sql]
   D --> D2[seed.sql]
   
-  F --> F1[instalacion_docker_windows.md]
+  F --> F1[instalacion_docker.md]
   F --> F2[metodologia_git.md]
   F --> F3[README.md]
   
@@ -98,21 +98,6 @@ graph TD
 
 ### 3️⃣ Cómo trabajar (guía)
 1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
-
-### Por qué usamos Docker 🐳
-Docker permite que todo el equipo trabaje con el mismo entorno, sin depender del sistema operativo de cada uno.
-Ejemplo: si en un PC PostgreSQL está en la versión 14 y en otro en la 16, puede fallar.
-Con Docker, todos usan el mismo contenedor exacto, garantizando compatibilidad total.
-
-Ventajas:
-
-- Entorno idéntico para todos.
-
-- No necesita instalar PostgreSQL ni Node globalmente.
-
-- Despliegue instantáneo con docker-compose up.
-
-- Aísla servicios (base de datos, backend, OCR…).
 
 ### 📚 Créditos
 Proyecto desarrollado por el grupo Scan2Cook – PTI 2025.
