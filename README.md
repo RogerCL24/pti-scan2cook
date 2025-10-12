@@ -47,7 +47,7 @@ Antes de empezar, asegúraos de tener instalado en vuestro equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
-- [Docker](docs/instalacion-docker-windows.md)
+- [Docker](docs/instalacion_docker.md)
 - Visual Studio Code (recomendado)
 
 ---
