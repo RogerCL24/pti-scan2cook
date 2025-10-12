@@ -84,9 +84,11 @@ Output esperado
 | Acción                     | Comando                                                      |
 | -------------------------- | ------------------------------------------------------------ |
 | Iniciar todo               | `docker compose up --build`                                  |
-| Parar todo                 | `docker compose down`                                        |
+| Parar todo con persistencia de datos                 | `docker compose down`                                        |
+| Parar todo sin persistencia de datos                 | `docker compose down -v`                                        |
 | Ver contenedores activos   | `docker ps`                                                  |
 | Entrar en la base de datos | `docker exec -it scan2cook_db psql -U postgres -d scan2cook` |
 | Ver logs del backend       | `docker logs scan2cook_backend`                              |
 | Reconstruir imágenes       | `docker compose build --no-cache`                            |
-
+| Reiniciar sin perder datos | `docker compose down && docker compose up -d` |
+| Reiniciar borrando todo | `docker compose down -v && docker compose up --build` |

@@ -77,8 +77,12 @@ Para comprobarlo:
 1. Pulsa Windows + R
 2. Escribe cmd y presiona Enter.
 3. En la ventana de comandos, escribe:
+```
+wmic cpu get name
+```
 
 → Si aparece algo como AMD Ryzen o Intel i5/i7/i9, es AMD64.
+
 → Si aparece algo como Snapdragon, es ARM64.
 
 ### 2. Descargar Docker Desktop
