@@ -27,7 +27,7 @@ sudo apt update && sudo apt upgrade -y
 
 ### Paso 2. Instalar Docker y Docker Compose
 ```bash
-sudo apt install docker.io docker-compose -y
+sudo apt install docker.io docker-compose-plugin -y
 ```
 Esto instalará tanto Docker como Docker Compose (gestor de múltiples contenedores).
 
@@ -47,7 +47,7 @@ Si ves la línea Active: active (running), está funcionando correctamente.
 Ejecuta:
 ```bash
 sudo docker --version
-sudo docker-compose --version
+sudo docker compose version
 ```
 
 Deberías ver las versiones instaladas.
@@ -65,6 +65,8 @@ sudo usermod -aG docker $USER
 ```
 Luego cierra sesión y vuelve a entrar.
 Después podrás usar comandos como `docker ps` sin necesidad de sudo.
+
+Ahora podéis probar la app :smile: -> [configuracion_docker_inicial.md](configuracion_docker_inicial.md)
 
 ## 2. Instalación alternativa: Windows
 ### 1. Comprobar el tipo de procesador
