@@ -101,6 +101,7 @@ graph TD
 
 ### 3️⃣ Cómo trabajar (guía)
 1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
+2. Despues de haber instalado docker, probad la app -> [configuracion_docker_inicial.md](docs/configuracion_docker_inicial.md)
 
 ### 📚 Créditos
 Proyecto desarrollado por el grupo Scan2Cook – PTI 2025.
