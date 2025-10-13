@@ -23,8 +23,7 @@ El sistema parte de un modelo simple:
 
 Las relaciones se definen con claves foráneas y borrado en cascada para mantener la integridad referencial.
 
-## Diagrama del Modelo de Datos
-## 🧭 Diagrama entidad–relación (ER)
+## Diagrama entidad–relación (ER)
 
 ```mermaid
 erDiagram
