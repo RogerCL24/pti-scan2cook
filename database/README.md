@@ -6,7 +6,7 @@ El objetivo es gestionar la información de usuarios, productos en la despensa y
 ## 📁 Archivos principales
 | Archivo | Descripción |
 | -------- | ---------- |
-| ``init.sql`` | Crea las tablas principales: usuarios, productos, recetas e ingredientes. |
+| ``init.sql`` | Crea las tablas principales: usuarios, productos, recetas, ingredientes y tickets. |
 | ``seed.sql`` | Inserta datos iniciales de prueba para poder testear el backend. |
 
 ## Concepto general
@@ -18,6 +18,8 @@ El sistema parte de un modelo simple:
 - **Recetas** (recipes) → propuestas de platos que puede cocinar.
 
 - **Ingredientes** (ingredients) → qué productos necesita cada receta.
+
+- **Tickets** (tickets) → tickets subidos por usuarios.
 
 Las relaciones se definen con claves foráneas y borrado en cascada para mantener la integridad referencial.
 
@@ -69,18 +71,5 @@ erDiagram
         string quantity
     }
 ```
-
-## Cómo ejecutar los scripts
-Ejecutarlos manualmente desde el terminal de PostgreSQL:
-```bash
-psql -U postgres -d scan2cook -f init.sql
-psql -U postgres -d scan2cook -f seed.sql
-```
-O desde DBeaver, PgAdmin, o cualquier cliente SQL conectado a la base de datos.
-
-> [!NOTE] 
-> Estos scripts se ejecutarán automáticamente más adelante mediante Docker Compose.
-> En desarrollo se puede ejecutar manualmente cada vez que se quiera reiniciar los datos.
-> Si se añaden nuevas tablas o relaciones, deben documentarse aquí y actualizar ``init.sql``.
 
 ## Autor
