@@ -21,6 +21,55 @@ El sistema parte de un modelo simple:
 
 Las relaciones se definen con claves foráneas y borrado en cascada para mantener la integridad referencial.
 
+## Diagrama del Modelo de Datos
+## 🧭 Diagrama entidad–relación (ER)
+
+```mermaid
+erDiagram
+    USERS ||--o{ TICKETS : tiene
+    USERS ||--o{ PRODUCTS : posee
+    TICKETS ||--o{ PRODUCTS : genera
+    RECIPES ||--o{ INGREDIENTS : usa
+
+    USERS {
+        int id PK
+        string name
+        string email
+        string password_hash
+    }
+
+    TICKETS {
+        int id PK
+        int user_id FK
+        text image_path
+        text raw_text
+        bool processed
+    }
+
+    PRODUCTS {
+        int id PK
+        int user_id FK
+        int ticket_id FK
+        string name
+        int quantity
+        date expiration_date
+    }
+
+    RECIPES {
+        int id PK
+        string title
+        text description
+        int cook_time
+    }
+
+    INGREDIENTS {
+        int id PK
+        int recipe_id FK
+        string product_name
+        string quantity
+    }
+```
+
 ## Cómo ejecutar los scripts
 Ejecutarlos manualmente desde el terminal de PostgreSQL:
 ```bash
