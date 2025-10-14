@@ -34,10 +34,11 @@ backend/
 
 ```
 
-## 1. Requisitos previos
+## Sin docker (por si quereis hacer testing)
+### 1. Requisitos previos
 - Node.js v20 o superior
 
-## 2. Instalación del entorno
+### 2. Instalación del entorno
 Antes de ejecutar el backend por primera vez, asegúrate de instalar las dependencias indicadas en el archivo ``package.json``.
 
 En la terminal, estando dentro de la carpeta ``backend/``, ejecuta:
@@ -46,7 +47,7 @@ npm install
 ```
 Esto instalará automáticamente todos los módulos que el backend necesita para funcionar.
 
-## 3. Añadir nuevas dependencias
+### 3. Añadir nuevas dependencias
 Cuando la desarrolladora de backend necesite instalar una nueva librería, debe hacerlo así:
 
 1️⃣ Instalar la librería:
@@ -56,7 +57,7 @@ npm install nombre-paquete
 2️⃣ Verificar que funciona en local.
 
 
-## 4. Ejecución del servidor
+### 4. Ejecución del servidor
 Una vez instaladas las dependencias, puedes ejecutar el servidor en modo desarrollo:
 ```bash
 node server.js
@@ -66,13 +67,14 @@ Deberías ver el mensaje:
 ✅ “Scan2Cook API funcionando en puerto 3000”
 ```
 
-## 5. Uso del Dockerfile (más adelante)
+## Con Docker, uso del Dockerfile 
 El archivo Dockerfile sirve para empaquetar el backend dentro de un contenedor Docker.
 
-Por ahora, no es necesario usarlo, ya que Docker se configurará al final del proyecto (cuando todo funcione localmente).
-
-Cuando llegue ese momento, el comando será:
+El comando será:
 ```bash
 docker build -t scan2cook-backend .
 docker run -p 3000:3000 scan2cook-backend
 ```
+
+> [!NOTE]
+> Estos comandos son informativos, para iniciar el backend junto con la base de datos, que es lo ideal para probarlo todo, es suficiente ejecutar el paso 3 de [configuracion_docker_inicial.md](../docs/configuracion_docker_inicial.md) :kissing_smiling_eyes:
