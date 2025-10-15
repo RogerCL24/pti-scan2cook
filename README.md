@@ -47,10 +47,13 @@ Antes de empezar, asegúraos de tener instalado en vuestro equipo:
 
 - [Git](https://git-scm.com/downloads)
 - [Node.js 20+](https://nodejs.org/)
-- [Docker Desktop](docs/instalacion-docker-windows.md)
+- [Docker](docs/instalacion_docker.md)
 - Visual Studio Code (recomendado)
 
 ---
+
+> [!TIP]
+> Recomiendo hacerlo en **Linux**, docker es mucho más fácil de instalar ahí.
 
 ## 📦 Instrucciones de instalación
 
@@ -63,7 +66,7 @@ mkdir ~/Proyecto
 cd ~/Proyecto
 
 # 2. Clonar el repositorio
-git clone https://github.com/RogerCL24/scan2cook.git
+git clone https://github.com/RogerCL24/pti-scan2cook.git
 
 # 3. Entrar en la carpeta del proyecto
 cd pti-scan2cook
@@ -87,7 +90,7 @@ graph TD
   D --> D1[init.sql]
   D --> D2[seed.sql]
   
-  F --> F1[instalacion_docker_windows.md]
+  F --> F1[instalacion_docker.md]
   F --> F2[metodologia_git.md]
   F --> F3[README.md]
   
@@ -98,21 +101,7 @@ graph TD
 
 ### 3️⃣ Cómo trabajar (guía)
 1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
-
-### Por qué usamos Docker 🐳
-Docker permite que todo el equipo trabaje con el mismo entorno, sin depender del sistema operativo de cada uno.
-Ejemplo: si en un PC PostgreSQL está en la versión 14 y en otro en la 16, puede fallar.
-Con Docker, todos usan el mismo contenedor exacto, garantizando compatibilidad total.
-
-Ventajas:
-
-- Entorno idéntico para todos.
-
-- No necesita instalar PostgreSQL ni Node globalmente.
-
-- Despliegue instantáneo con docker-compose up.
-
-- Aísla servicios (base de datos, backend, OCR…).
+2. Despues de haber instalado docker, probad la app -> [configuracion_docker_inicial.md](docs/configuracion_docker_inicial.md)
 
 ### 📚 Créditos
 Proyecto desarrollado por el grupo Scan2Cook – PTI 2025.
