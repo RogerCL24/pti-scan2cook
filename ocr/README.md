@@ -1,4 +1,3 @@
-````markdown
 # 🧠 Módulo OCR – Scan2Cook  
 ### Reconocimiento automático de tickets de compra con **Tesseract.js**
 
