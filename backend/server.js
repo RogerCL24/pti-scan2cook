@@ -1,12 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import pkg from 'pg'; // importamos la librería PostgreSQL
+import ocrRouter from './routes/ocr.js';
 const { Pool } = pkg;
 
 dotenv.config(); // carga las variables desde .env
 
 const app = express();
 app.use(express.json());
+app.use('/ocr', ocrRouter);  
 
 // Crear pool de conexión a PostgreSQL
 const pool = new Pool({
@@ -16,6 +18,8 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'scan2cook',
   port: process.env.DB_PORT || 5432,
 });
+
+//para probar OCR podemos comentar este pool.connect
 
 // Probar la conexión
 pool.connect()
