@@ -1,3 +1,4 @@
+````markdown
 # 🧠 Módulo OCR – Scan2Cook  
 ### Reconocimiento automático de tickets de compra con **Tesseract.js**
 
@@ -23,8 +24,11 @@ backend/
         ├── tesseract.js       # Reconocimiento de texto (OCR)
         ├── parser.js          # Limpieza y extracción de productos
         └── classifier.js      # Clasificación (alimentación, cosmética, etc.)
+````
 
-⚙️ Dependencias principales
+---
+
+## ⚙️ Dependencias principales
 
 | Librería         | Uso principal                                        |
 | ---------------- | ---------------------------------------------------- |
@@ -35,27 +39,37 @@ backend/
 
 Instalación de dependencias:
 
+```bash
 cd backend
 npm install express multer tesseract.js sharp
+```
 
-🚀 Flujo de funcionamiento
+---
 
-1️⃣ El usuario envía una imagen del ticket al endpoint /ocr/receipt.
-2️⃣ El servidor procesa la imagen con Sharp (ajuste de tamaño, escala de grises, binarización).
-3️⃣ Tesseract.js extrae el texto del ticket.
-4️⃣ El parser.js limpia el texto y detecta líneas con nombre y precio.
-5️⃣ El classifier.js clasifica cada producto según su tipo.
-6️⃣ El resultado se devuelve en formato JSON.
+## 🚀 Flujo de funcionamiento
 
-🧠 Ejemplo de funcionamiento (MVP)
-📥 Entrada: imagen con texto
+1️⃣ El usuario envía una **imagen del ticket** al endpoint `/ocr/receipt`.
+2️⃣ El servidor procesa la imagen con **Sharp** (ajuste de tamaño, escala de grises, binarización).
+3️⃣ **Tesseract.js** extrae el texto del ticket.
+4️⃣ El **parser.js** limpia el texto y detecta líneas con nombre y precio.
+5️⃣ El **classifier.js** clasifica cada producto según su tipo.
+6️⃣ El resultado se devuelve en formato **JSON**.
 
+---
+
+## 🧠 Ejemplo de funcionamiento (MVP)
+
+### 📥 Entrada: imagen con texto
+
+```
 LECHE SEMI 1L       0,95 €
 GEL DUCHA ALOE      1,25 €
 ARROZ 1KG           1,10 €
+```
 
-📤 Salida JSON esperada:
+### 📤 Salida JSON esperada:
 
+```json
 {
   "items": [
     { "name": "LECHE SEMI 1L", "price": 0.95, "category": "alimento" },
@@ -64,39 +78,57 @@ ARROZ 1KG           1,10 €
   ],
   "totalLines": 3
 }
+```
 
-🧪 Testing previsto
+---
 
-🧾 Casos de prueba:
+## 🧪 Testing previsto
 
-- Tickets de diferentes supermercados (Mercadona, Lidl, Carrefour, Eroski).
+🧾 **Casos de prueba:**
 
-- Tickets impresos vs. digitales.
+* Tickets de diferentes supermercados (Mercadona, Lidl, Carrefour, Eroski)
+* Tickets impresos vs. digitales
+* Imágenes borrosas o con iluminación desigual
 
-- Imágenes borrosas o con iluminación desigual.
+⚙️ **Ajustes a evaluar:**
 
-⚙️ Ajustes a evaluar:
+* Precisión de lectura OCR
+* Variaciones en preprocesado (threshold, resize, grises)
+* Detección de errores en parsing
 
-- Precisión de lectura OCR.
+---
 
-- Variaciones en preprocesado (threshold, resize, grises).
+## 🧭 Próximos pasos
 
-- Detección de errores en parsing.
-
-🧭 Próximos pasos
 | Etapa                         | Descripción                           | Estado           |
 | ----------------------------- | ------------------------------------- | ---------------- |
 | 🧩 **Integración OCR básica** | Implementar `tesseract.js` con Multer | ✅ Hecho          |
 | 🧠 **Parser**                 | Extraer nombre y precio por línea     | 🔜 En desarrollo |
 | 🎯 **Classifier**             | Clasificar productos por tipo         | 🔜 Pendiente     |
 | 🔌 **Integración Express**    | Endpoint `/ocr/receipt` operativo     | ✅ Hecho          |
-| 🧪 **Testing real**           | Tickets reales (jpg/png)              | 🔜 Parcialmente       |
+| 🧪 **Testing real**           | Tickets reales (jpg/png)              | 🔜 Parcialmente  |
 | 🤖 **Versión IA**             | Clasificación inteligente con ML      | 🧩 Futuro        |
 
+---
 
-👩‍💻 Autora del módulo
+## 💡 Tip
 
-Zineb Bensaid Janah
-OCR & IA Integration – Scan2Cook Project
-🎓 Universitat Politècnica de Catalunya (UPC)
-📆 PTI 2025
+Para probar el OCR, ejecuta el backend y envía un `POST` con una imagen al endpoint `/ocr/receipt`.
+
+Ejemplo:
+
+```bash
+curl -X POST http://localhost:3000/ocr/receipt \
+  -H "Content-Type: multipart/form-data" \
+  -F "image=@/ruta/a/tu/ticket.jpg"
+```
+
+---
+
+## 👩‍💻 Autora del módulo
+
+**Zineb Bensaid Janah**
+*OCR & IA Integration – Scan2Cook Project*
+🎓 **Universitat Politècnica de Catalunya (UPC)**
+📆 **PTI 2025**
+
