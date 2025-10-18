@@ -29,3 +29,6 @@ dist/
 build/
 .cache/
 coverage/
+
+# Temporary files
+images/
