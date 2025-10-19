@@ -20,8 +20,11 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/scan2cook
-      - HF_TOKEN=${HF_TOKEN}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
+    volumes:
+      - ./backend/google-credentials.json:/app/google-credentials.json
     depends_on:
       - db
+
 volumes:
   postgres_data:

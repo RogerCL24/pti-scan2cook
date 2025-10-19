@@ -9,6 +9,8 @@ pool.connect()
   .then(() => console.log("✅ Conectado a PostgreSQL correctamente"))
   .catch(err => console.error("❌ Error conectando a PostgreSQL:", err));
 
-// Arrancar servidor Express
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+});
