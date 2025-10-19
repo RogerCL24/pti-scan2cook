@@ -15,15 +15,16 @@ export async function analyzeReceipt(localPath) {
     const detections = result.textAnnotations;
 
     if (!detections || detections.length === 0) {
-      return { text: "", error: "No se detectó texto" };
+      console.log("🧾 Vision API: no text detected");
+      return "";
     }
 
     // El primer elemento es el texto completo reconocido
-    const fullText = detections[0].description;
+    const fullText = detections[0].description || "";
 
     console.log("🧾 Texto detectado por Vision API:", fullText.substring(0, 120));
 
-    return { text: fullText };
+    return fullText;
   } catch (err) {
     console.error("❌ Error en Google Vision API:", err);
     throw err;

@@ -3,33 +3,29 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import pool from "../lib/db.js";
-import { analyzeReceipt } from "../services/ocr/googleVision.js"; // nueva función OCR
+import { analyzeReceipt } from "../services/ocr/googleVision.js";
+import { parseWithRegex } from "../services/ocr/parserRegex.js";
+import { parseWithGemini } from "../services/ocr/parserGemini.js";
 
 const router = express.Router();
-
-// Carpeta donde guardar temporalmente las imágenes
 const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Configurar multer para guardar en disco
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
-// Endpoint principal del OCR
-router.post("/receipt", upload.single("image"), async (req, res) => {
+/**
+ * 1️⃣ Endpoint OCR base con Google Vision (guarda ticket en BD)
+ */
+router.post("/vision", upload.single("image"), async (req, res) => {
   try {
     const imagePath = path.join(uploadDir, req.file.filename);
     const text = await analyzeReceipt(imagePath);
+    const userId = 1; // temporal
 
-    // Simular usuario logueado (temporal)
-    const userId = 1;
-
-    // Guardar ticket en la base de datos
     const insertQuery = `
       INSERT INTO tickets (user_id, image_path, raw_text, processed)
       VALUES ($1, $2, $3, false)
@@ -50,6 +46,34 @@ router.post("/receipt", upload.single("image"), async (req, res) => {
   } catch (err) {
     console.error("❌ Error procesando ticket:", err);
     res.status(500).json({ error: "OCR_FAILED", details: err.message });
+  }
+});
+
+/**
+ * 2️⃣ OCR + Parser Regex
+ */
+router.post("/regex", upload.single("image"), async (req, res) => {
+  try {
+    const text = await analyzeReceipt(req.file.path);
+    const products = parseWithRegex(text);
+    res.json({ products });
+  } catch (err) {
+    console.error("❌ Error OCR Regex:", err);
+    res.status(500).json({ error: "OCR_REGEX_FAILED" });
+  }
+});
+
+/**
+ * 3️⃣ OCR + Parser Gemini
+ */
+router.post("/gemini", upload.single("image"), async (req, res) => {
+  try {
+    const text = await analyzeReceipt(req.file.path);
+    const products = await parseWithGemini(text);
+    res.json({ products });
+  } catch (err) {
+    console.error("❌ Error OCR Gemini:", err);
+    res.status(500).json({ error: "OCR_GEMINI_FAILED" });
   }
 });
 
