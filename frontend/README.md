@@ -60,5 +60,4 @@ docker compose up --build
 Problemas comunes
 - Si ves `413 Request Entity Too Large`, reduce el tamaño de la imagen en cliente o ajusta `client_max_body_size` en `nginx.conf`.
 
-Si quieres que documente más archivos en detalle o añada diagramas de flujo para el proceso OCR o el flujo de registro, dímelo y lo añado.
 # Interfaz React
