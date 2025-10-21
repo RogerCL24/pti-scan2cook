@@ -87,14 +87,14 @@ graph TD
     B1[server.js]
     B2[Dockerfile]
     B3[package.json]
-    B4[routes/ (auth, ocr, products ...)]
+    B4[routes: auth, ocr, products]
   end
 
   subgraph Frontend
     C1[index.html]
     C2[Dockerfile]
     C3[nginx.conf]
-    C4[src/ (App, pages, components, api, hooks)]
+    C4[src: App, pages, components, api, hooks]
   end
 
   D --> D1[init.sql]
