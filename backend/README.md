@@ -6,10 +6,32 @@ Se encarga de manejar las peticiones de la app (frontend), conectarse a la base 
 ```
 backend/
 │
-├── Dockerfile          → Configuración para crear el contenedor Docker
-├── package.json        → Lista de dependencias Node.js
-├── server.js           → Punto de entrada del servidor (Express)
-└── README.md           → Este archivo
+├── Dockerfile              → Configuración para crear el contenedor Docker
+├── package.json            → Lista de dependencias Node.js
+├── server.js               → Punto de entrada del servidor
+├── app.js                  → Configura Express, rutas, middlewares y logs
+├── .env.example            → Plantilla de variables de entorno
+├── README_API.md           → Documentación de la API (endpoints, JWT, ejemplos)
+├── README.md               → Este archivo
+│
+├── routes/                 → Contiene todas las rutas HTTP (endpoints)
+│   ├── auth.js             → Registro, login y tokens JWT
+│   ├── products.js         → Gestión de inventario del usuario
+│   ├── recipes.js          → Consultas y búsqueda de recetas
+│   └── ocr.js              → Procesa tickets mediante el microservicio OCR
+│
+├── middlewares/            → Funciones que se ejecutan antes de las rutas
+│   └── authGuard.js        → Verifica token JWT
+│
+├── lib/                    → Funciones auxiliares y utilidades
+│   ├── validate.js         → Esquemas de validación con Zod
+│   └── parseTicketText.js  → Limpia texto OCR y genera lista de productos
+│
+└── repos/                  → Capa de datos, abstracción sobre la BD
+    ├── memoryUsers.js      → Simula tabla de usuarios en memoria
+    ├── memoryProducts.js   → Simula inventario de productos
+    └── recipes.repo.memory.js → Lista de recetas e ingredientes simulados
+
 ```
 
 ## Sin docker (por si quereis hacer testing)
