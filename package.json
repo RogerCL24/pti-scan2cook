@@ -1,0 +1,18 @@
+{
+  "name": "pti-scan2cook",
+  "version": "1.0.0",
+  "description": "**Proyecto PTI – Curso 2025**   Gestor de inventario doméstico con OCR, recetas y asistente de voz.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
