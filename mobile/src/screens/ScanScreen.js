@@ -92,59 +92,55 @@ export default function ScanScreen({ navigation }) {
   };
 
   // Escanear ticket
-  const onScan = async () => {
-    if (!image) {
-      Alert.alert('Sin imagen', 'Sube una imagen primero');
+const onScan = async () => {
+  if (!image) {
+    Alert.alert('Sin imagen', 'Sube una imagen primero');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 Iniciando escaneo');
+    console.log('   URI:', image.uri);
+    console.log('   Modo:', mode);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    const res = await uploadImageToOcr(image.uri, mode);
+    
+    console.log('✅ OCR completado:', res);
+
+    const products = res.products || [];
+    
+    if (products.length === 0) {
+      Alert.alert(
+        'Sin productos',
+        'No se detectaron productos en la imagen. Intenta con otra foto más clara.'
+      );
       return;
     }
 
-    setLoading(true);
-    try {
-      // Crear FormData para enviar la imagen
-      const formData = new FormData();
-      formData.append('image', {
-        uri: image.uri,
-        type: 'image/jpeg',
-        name: 'ticket.jpg',
-      });
-
-      console.log('>> Uploading image with mode:', mode);
-      
-      // Llamar a la API OCR
-      const res = await uploadImageToOcr(formData, mode);
-      console.log('>> OCR response:', res);
-
-      const products = res.products || [];
-      
-      if (products.length === 0) {
-        Alert.alert(
-          'Sin productos',
-          'No se detectaron productos en la imagen. Intenta con otra foto más clara.'
-        );
-        return;
-      }
-
-      // Guardar productos en AsyncStorage temporalmente
-      await AsyncStorage.setItem('ocr_products', JSON.stringify(products));
-      
-      // Navegar a pantalla de revisión
-      navigation.navigate('Review');
-    } catch (err) {
-      console.error('OCR error:', err);
-      
-      let errorMessage = 'Error procesando OCR';
-      
-      if (err.status) {
-        errorMessage = err.data?.error || `HTTP ${err.status}`;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      Alert.alert('Error', errorMessage);
-    } finally {
-      setLoading(false);
+    // Guardar productos en AsyncStorage
+    await AsyncStorage.setItem('ocr_products', JSON.stringify(products));
+    
+    // Navegar a pantalla de revisión
+    navigation.navigate('Review');
+  } catch (err) {
+    console.error('❌ OCR error:', err);
+    
+    let errorMessage = 'Error procesando OCR';
+    
+    if (err.status) {
+      errorMessage = err.data?.error || `HTTP ${err.status}`;
+    } else if (err.message) {
+      errorMessage = err.message;
     }
-  };
+    
+    Alert.alert('Error', errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
