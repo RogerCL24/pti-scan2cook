@@ -125,11 +125,11 @@ npx expo --version
 
 ### 1️⃣ Configurar URL del backend
 
-Edita `src/api/client.js` y cambia la IP por la de tu ordenador:
+Edita `src/utils/constants.js` y cambia la IP por la de tu ordenador:
 
 ```javascript
-// src/api/client.js
-const API_BASE = 'http://192.168.1.100:3000'; // 🔴 CAMBIAR POR TU IP
+// src/utils/constants.js
+const LOCAL_IP = '192.168.1.130'; // 🔴 CAMBIAR POR TU IP
 ```
 
 **Obtener tu IP local:**
@@ -306,7 +306,7 @@ ReviewScreen
 - Elegir modo OCR (Gemini o Regex)
 - Previsualizar imagen antes de escanear
 - Enviar al backend para procesamiento
-
+- Log out
 **Permisos necesarios:**
 - Cámara
 - Galería de fotos
@@ -444,8 +444,8 @@ docker compose ps
 # 2. Verificar tu IP
 hostname -I
 
-# 3. Actualizar IP en src/api/client.js
-const API_BASE = 'http://TU_IP_AQUI:3000';
+# 3. Actualizar IP en src/utils/constants.js
+const LOCAL_IP = '192.168.1.X'; #Reemplazar por tu IP
 
 # 4. Verificar que móvil y ordenador están en la misma WiFi
 
