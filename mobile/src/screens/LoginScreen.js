@@ -2,68 +2,130 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Alert,
+  Pressable,
+  Image,
 } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import { Colors } from '../constants/colors';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
   const { login } = useAuth();
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = 'El email es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    if (!password) {
+      newErrors.password = 'La contraseña es obligatoria';
+    } else if (password.length < 6) {
+      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleLogin = async () => {
+    setErrors({});
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      setLoading(true);
-      await login(email, password);
+      const result = await login(email.trim(), password);
+
+      if (result.success) {
+        navigation.replace('MainTabs'); // Cambiar 'Home' por 'MainTabs'
+      } else {
+        Alert.alert('Error', result.error || 'Error al iniciar sesión');
+      }
     } catch (error) {
-      alert(error.message);
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.buttonText}>
-          {loading ? 'Loading...' : 'Login'}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Register')}
-      >
-        <Text style={styles.linkText}>
-          Don't have an account? Register here
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.content}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Image
+              source={require('../../assets/scan2cook-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
+          </View>
+
+          {/* FORMULARIO */}
+          <View style={styles.form}>
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="tu@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+              icon="mail-outline"
+            />
+
+            <Input
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Tu contraseña"
+              secureTextEntry
+              error={errors.password}
+              icon="lock-closed-outline"
+            />
+
+            <Button
+              title="Iniciar Sesión"
+              onPress={handleLogin}
+              loading={loading}
+            />
+          </View>
+
+          {/* FOOTER */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>¿No tienes cuenta?</Text>
+            <Pressable onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.linkText}>Regístrate aquí</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -71,36 +133,55 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: Colors.backgroundPrimary,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
     justifyContent: 'center',
-    backgroundColor: '#FEF3C7',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 200,
+    height: 200,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#D97706',
-    padding: 15,
-    borderRadius: 8,
+    color: Colors.brandPrimary,
     marginTop: 10,
+    marginBottom: 8,
   },
-  buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
+  subtitle: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
+  form: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  footerText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginRight: 6,
   },
   linkText: {
-    marginTop: 15,
-    textAlign: 'center',
-    color: '#92400E',
+    fontSize: 14,
+    color: Colors.brandPrimary,
+    fontWeight: '600',
   },
 });

@@ -1,0 +1,331 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { Colors } from '../constants/colors';
+import { getUserProducts, deleteProduct } from '../services/products';
+
+export default function PantryScreen({ navigation }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Cargar productos cuando la pantalla se enfoca
+  useFocusEffect(
+    useCallback(() => {
+      loadProducts();
+    }, [])
+  );
+
+  // Cargar productos del backend
+  const loadProducts = async () => {
+    try {
+      console.log('📦 Cargando productos de la despensa...');
+      const data = await getUserProducts();
+      console.log('✅ Productos cargados:', data.length);
+      setProducts(data);
+    } catch (error) {
+      console.error('❌ Error cargando productos:', error);
+      Alert.alert('Error', 'No se pudieron cargar los productos');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Refrescar productos (pull to refresh)
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadProducts();
+  };
+
+  // Eliminar producto
+  const handleDelete = (product) => {
+    Alert.alert(
+      'Eliminar producto',
+      `¿Estás seguro de que quieres eliminar "${product.name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteProduct(product.id);
+              // Actualizar lista localmente
+              setProducts((prev) => prev.filter((p) => p.id !== product.id));
+              Alert.alert('Eliminado', 'Producto eliminado correctamente');
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar el producto');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Renderizar cada producto
+  const renderProduct = ({ item }) => (
+    <View style={styles.productCard}>
+      <View style={styles.productIcon}>
+        <Ionicons
+          name="nutrition-outline"
+          size={28}
+          color={Colors.brandSecondary}
+        />
+      </View>
+
+      <View style={styles.productInfo}>
+        <Text style={styles.productName}>{item.name}</Text>
+        <View style={styles.productMeta}>
+          <View style={styles.quantityBadge}>
+            <Text style={styles.quantityText}>x{item.quantity || 1}</Text>
+          </View>
+          {item.category && (
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+          )}
+        </View>
+        {item.expiration_date && (
+          <Text style={styles.expirationText}>
+            Caduca: {new Date(item.expiration_date).toLocaleDateString('es-ES')}
+          </Text>
+        )}
+      </View>
+
+      <Pressable style={styles.deleteButton} onPress={() => handleDelete(item)}>
+        <Ionicons name="trash-outline" size={22} color={Colors.systemError} />
+      </Pressable>
+    </View>
+  );
+
+  // Pantalla vacía
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="basket-outline" size={80} color={Colors.textSecondary} />
+      <Text style={styles.emptyTitle}>Despensa vacía</Text>
+      <Text style={styles.emptyText}>
+        Escanea un ticket para añadir productos a tu despensa
+      </Text>
+      <Pressable
+        style={styles.scanButton}
+        onPress={() => navigation.navigate('Scan')}
+      >
+        <Ionicons
+          name="scan-outline"
+          size={20}
+          color={Colors.backgroundPrimary}
+        />
+        <Text style={styles.scanButtonText}>Escanear ticket</Text>
+      </Pressable>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.brandPrimary} />
+        <Text style={styles.loadingText}>Cargando despensa...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Ionicons
+            name="basket-outline"
+            size={32}
+            color={Colors.brandPrimary}
+          />
+          <View>
+            <Text style={styles.title}>Mi Despensa</Text>
+            <Text style={styles.subtitle}>
+              {products.length} producto{products.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* LISTA DE PRODUCTOS */}
+      <FlatList
+        data={products}
+        renderItem={renderProduct}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={
+          products.length === 0 ? styles.emptyList : styles.list
+        }
+        ListEmptyComponent={renderEmpty}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.brandPrimary]}
+          />
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.backgroundPrimary,
+    paddingTop: 60,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundPrimary,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.backgroundSecondary,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.brandPrimary,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  list: {
+    padding: 16,
+  },
+  emptyList: {
+    flex: 1,
+  },
+  productCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.backgroundSecondary,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    alignItems: 'center',
+  },
+  productIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  productMeta: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  quantityBadge: {
+    backgroundColor: Colors.brandPrimary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  quantityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.backgroundPrimary,
+  },
+  categoryBadge: {
+    backgroundColor: Colors.brandSecondary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.backgroundPrimary,
+  },
+  expirationText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.brandPrimary,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  scanButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.backgroundPrimary,
+  },
+});
