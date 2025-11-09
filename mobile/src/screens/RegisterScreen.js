@@ -2,164 +2,183 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Alert,
-  ActivityIndicator,
+  Pressable,
+  Image,
 } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import { Colors } from '../constants/colors';
 
 export default function RegisterScreen({ navigation }) {
+  // Estados para los inputs
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Hook de autenticación
   const { register } = useAuth();
 
-  // Validación de email
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Validar formulario
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validar nombre
+    if (!name.trim()) {
+      newErrors.name = 'El nombre es obligatorio';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+    }
+
+    // Validar email
+    if (!email.trim()) {
+      newErrors.email = 'El email es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    // Validar password
+    if (!password) {
+      newErrors.password = 'La contraseña es obligatoria';
+    } else if (password.length < 6) {
+      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+
+    // Validar confirmación de password
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Confirma tu contraseña';
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
+  // Manejar registro
   const handleRegister = async () => {
-    // ============================================
-    // VALIDACIONES DEL CLIENTE (antes de enviar)
-    // ============================================
-    
-    // 1. Campos vacíos
-    if (!name.trim()) {
-      Alert.alert('Error', 'Introduce tu nombre');
+    // Limpiar errores previos
+    setErrors({});
+
+    // Validar
+    if (!validateForm()) {
       return;
     }
 
-    // 2. Email válido
-    if (!validateEmail(email)) {
-      Alert.alert('Error', 'Introduce un email válido');
-      return;
-    }
-
-    // 3. Contraseña mínima (según tu backend valida 6 caracteres)
-    if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    // ============================================
-    // ENVIAR AL BACKEND
-    // ============================================
     setLoading(true);
+
     try {
-      await register(name, email, password);
-      
-      // Si llega aquí, el registro fue exitoso
-      Alert.alert(
-        'Registro exitoso',
-        'Tu cuenta ha sido creada',
-        [
+      const result = await register(name.trim(), email.trim(), password);
+
+      if (result.success) {
+        // Registro exitoso → Navegar a ScanScreen
+        Alert.alert('¡Bienvenido!', 'Tu cuenta ha sido creada exitosamente', [
           {
-            text: 'OK',
-            onPress: () => navigation.replace('Scan'), // O donde quieras redirigir
+            text: 'Continuar',
+            onPress: () => navigation.replace('Scan'),
           },
-        ]
-      );
-    } catch (error) {
-      // ============================================
-      // MANEJO DE ERRORES DEL BACKEND
-      // ============================================
-      console.error('Registration error:', error);
-
-      let errorMessage = 'Error al crear la cuenta';
-
-      // Detectar errores específicos del backend
-      if (error.status === 409) {
-        // Código 409 = Conflict (email ya existe)
-        errorMessage = 'Este email ya está registrado. ¿Quieres iniciar sesión?';
-      } else if (error.data?.error) {
-        // Mensaje específico del backend
-        errorMessage = error.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
+        ]);
+      } else {
+        // Mostrar error
+        Alert.alert('Error', result.error || 'Error al registrarse');
       }
-
-      // Mostrar error en un Alert nativo
-      Alert.alert('Error de registro', errorMessage);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
-        <Text style={styles.logo}>🥫</Text>
-        <Text style={styles.title}>Crear cuenta</Text>
-        <Text style={styles.subtitle}>Únete a Scan2Cook</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Image
+              source={require('../../assets/scan2cook-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Crear Cuenta</Text>
+            <Text style={styles.subtitle}>
+              Únete a Scan2Cook y gestiona tu despensa
+            </Text>
+          </View>
 
-        {/* Input: Nombre */}
-        <TextInput
-          style={styles.input}
-          placeholder="Nombre completo"
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="words"
-          autoComplete="name"
-        />
+          {/* FORMULARIO */}
+          <View style={styles.form}>
+            <Input
+              label="Nombre"
+              value={name}
+              onChangeText={setName}
+              placeholder="Tu nombre"
+              autoCapitalize="words"
+              error={errors.name}
+              icon="person-outline"
+            />
 
-        {/* Input: Email */}
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-        />
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="tu@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+              icon="mail-outline"
+            />
 
-        {/* Input: Contraseña */}
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña (mínimo 6 caracteres)"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="password-new"
-        />
+            <Input
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Mínimo 6 caracteres"
+              secureTextEntry
+              error={errors.password}
+              icon="lock-closed-outline"
+            />
 
-        {/* Hint de validación */}
-        <Text style={styles.hint}>
-          La contraseña debe tener al menos 6 caracteres
-        </Text>
+            <Input
+              label="Confirmar Contraseña"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Repite tu contraseña"
+              secureTextEntry
+              error={errors.confirmPassword}
+              icon="lock-closed-outline"
+            />
 
-        {/* Botón de registro */}
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Crear cuenta</Text>
-          )}
-        </TouchableOpacity>
+            <Button
+              title="Crear Cuenta"
+              onPress={handleRegister}
+              loading={loading}
+            />
+          </View>
 
-        {/* Link a login */}
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Login')}
-          style={styles.linkContainer}
-        >
-          <Text style={styles.linkText}>
-            ¿Ya tienes cuenta? <Text style={styles.link}>Inicia sesión</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* FOOTER */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
+            <Pressable onPress={() => navigation.goBack()}>
+              <Text style={styles.linkText}>Inicia sesión</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -167,72 +186,58 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fffbeb', // amber-50
+    backgroundColor: Colors.backgroundPrimary,
+  },
+  scrollContainer: {
+    flexGrow: 1,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 20,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
   logo: {
-    fontSize: 80,
-    textAlign: 'center',
+    width: 100,
+    height: 100,
     marginBottom: 10,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#b45309', // amber-700
-    textAlign: 'center',
+    color: Colors.brandPrimary,
+    marginTop: 5,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#78716c',
+    fontSize: 14,
+    color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    paddingHorizontal: 20,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#d6d3d1',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  hint: {
-    fontSize: 12,
-    color: '#78716c',
+  form: {
+    width: '100%',
     marginBottom: 20,
-    marginLeft: 4,
   },
-  button: {
-    backgroundColor: '#f59e0b', // amber-500
-    padding: 16,
-    borderRadius: 8,
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#fbbf24', // amber-400
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkContainer: {
     marginTop: 20,
-    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginRight: 6,
   },
   linkText: {
-    color: '#78716c',
     fontSize: 14,
-  },
-  link: {
-    color: '#f59e0b',
+    color: Colors.brandPrimary,
     fontWeight: '600',
   },
 });

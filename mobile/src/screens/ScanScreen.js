@@ -2,28 +2,28 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
-  ActivityIndicator,
+  Image,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { uploadImageToOcr } from '../api/ocr';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/colors';
+import Button from '../components/Button';
+import { uploadImageToOcr } from '../services/ocr';
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 
 export default function ScanScreen({ navigation }) {
   const [image, setImage] = useState(null);
-  const [mode, setMode] = useState('gemini');
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState('gemini');
 
   // Tomar foto con la cámara
   const takePhoto = async () => {
     try {
-      // Pedir permisos de cámara
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
@@ -33,10 +33,9 @@ export default function ScanScreen({ navigation }) {
         return;
       }
 
-      // Abrir cámara
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8, // Comprimir para no exceder 8MB
+        quality: 0.8,
         allowsEditing: true,
         aspect: [3, 4],
       });
@@ -45,7 +44,7 @@ export default function ScanScreen({ navigation }) {
         setImage(result.assets[0]);
       }
     } catch (error) {
-      console.error('Camera error:', error);
+      console.error('❌ Camera error:', error);
       Alert.alert('Error', 'No se pudo abrir la cámara');
     }
   };
@@ -53,8 +52,8 @@ export default function ScanScreen({ navigation }) {
   // Seleccionar imagen de la galería
   const pickImage = async () => {
     try {
-      // Pedir permisos de galería
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Permisos necesarios',
@@ -63,8 +62,7 @@ export default function ScanScreen({ navigation }) {
         return;
       }
 
-      // Abrir galería
-      const result = await ImagePicker.launchImagePickerAsync({
+      const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsEditing: true,
@@ -73,114 +71,100 @@ export default function ScanScreen({ navigation }) {
 
       if (!result.canceled) {
         const imageAsset = result.assets[0];
-        
-        // Verificar tamaño (aproximado, no exacto)
+
         if (imageAsset.fileSize && imageAsset.fileSize > MAX_BYTES) {
           Alert.alert(
             'Imagen muy grande',
-            'La imagen excede 8MB. Por favor selecciona una imagen más pequeña o toma una foto nueva.'
+            'La imagen excede 8MB. Por favor selecciona una imagen más pequeña.'
           );
           return;
         }
-        
+
         setImage(imageAsset);
       }
     } catch (error) {
-      console.error('Gallery error:', error);
+      console.error('❌ Gallery error:', error);
       Alert.alert('Error', 'No se pudo abrir la galería');
     }
   };
 
-  // Escanear ticket
-const onScan = async () => {
-  if (!image) {
-    Alert.alert('Sin imagen', 'Sube una imagen primero');
-    return;
-  }
-
-  setLoading(true);
-  try {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📤 Iniciando escaneo');
-    console.log('   URI:', image.uri);
-    console.log('   Modo:', mode);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    const res = await uploadImageToOcr(image.uri, mode);
-    
-    console.log('✅ OCR completado:', res);
-
-    const products = res.products || [];
-    
-    if (products.length === 0) {
-      Alert.alert(
-        'Sin productos',
-        'No se detectaron productos en la imagen. Intenta con otra foto más clara.'
-      );
+  // Escanear ticket con backend REAL
+  const onScan = async () => {
+    if (!image) {
+      Alert.alert('Sin imagen', 'Sube una imagen primero');
       return;
     }
 
-    // Guardar productos en AsyncStorage
-    await AsyncStorage.setItem('ocr_products', JSON.stringify(products));
-    
-    // Navegar a pantalla de revisión
-    navigation.navigate('Review');
-  } catch (err) {
-    console.error('❌ OCR error:', err);
-    
-    let errorMessage = 'Error procesando OCR';
-    
-    if (err.status) {
-      errorMessage = err.data?.error || `HTTP ${err.status}`;
-    } else if (err.message) {
-      errorMessage = err.message;
+    setLoading(true);
+
+    try {
+      console.log('📤 Iniciando escaneo con backend real');
+
+      const response = await uploadImageToOcr(image.uri, mode);
+      console.log('RAW OCR RESPONSE:', response);
+      console.log('PRODUCTS:', response.products);
+
+      const products = response.products || [];
+
+      if (products.length === 0) {
+        Alert.alert(
+          'Sin productos',
+          'No se detectaron productos. Intenta con otra foto más clara.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Navegar a ReviewScreen con los productos
+      navigation.navigate('Review', { products });
+    } catch (error) {
+      console.error('❌ OCR error:', error);
+
+      let errorMessage = 'Error procesando OCR';
+
+      if (error.status) {
+        errorMessage = error.data?.error || `HTTP ${error.status}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
     }
-    
-    Alert.alert('Error', errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Escanear ticket de compra</Text>
-      <Text style={styles.subtitle}>
-        Toma una foto clara del ticket o selecciona una imagen de tu galería
-      </Text>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Ionicons name="scan-outline" size={48} color={Colors.brandPrimary} />
+        <Text style={styles.title}>Escanear Ticket</Text>
+        <Text style={styles.subtitle}>
+          Toma una foto clara del ticket o selecciona una imagen de tu galería
+        </Text>
+      </View>
 
-      {/* Previsualización de imagen */}
+      {/* PREVISUALIZACIÓN DE IMAGEN */}
       {image && (
         <View style={styles.imageContainer}>
           <Image source={{ uri: image.uri }} style={styles.image} />
-          <TouchableOpacity 
-            style={styles.removeButton}
-            onPress={() => setImage(null)}
-          >
-            <Text style={styles.removeButtonText}>✕</Text>
-          </TouchableOpacity>
+          <Pressable style={styles.removeButton} onPress={() => setImage(null)}>
+            <Ionicons
+              name="close-circle"
+              size={32}
+              color={Colors.systemError}
+            />
+          </Pressable>
         </View>
       )}
 
-      {/* Botones para capturar/seleccionar imagen */}
-      {!image && (
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.primaryButton} onPress={takePhoto}>
-            <Text style={styles.primaryButtonText}>📷 Tomar foto</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.secondaryButton} onPress={pickImage}>
-            <Text style={styles.secondaryButtonText}>🖼️ Desde galería</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Selector de modo OCR */}
+      {/* SELECTOR DE MODO (cuando hay imagen) */}
       {image && (
-        <>
+        <View style={styles.modeContainer}>
           <Text style={styles.label}>Método de detección:</Text>
           <View style={styles.modeSelector}>
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.modeButton,
                 mode === 'gemini' && styles.modeButtonActive,
@@ -193,11 +177,11 @@ const onScan = async () => {
                   mode === 'gemini' && styles.modeButtonTextActive,
                 ]}
               >
-                Gemini (IA)
+                Gemini IA
               </Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.modeButton,
                 mode === 'regex' && styles.modeButtonActive,
@@ -212,31 +196,44 @@ const onScan = async () => {
               >
                 Regex
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
-
-          {/* Botón de escanear */}
-          <TouchableOpacity
-            style={[styles.scanButton, loading && styles.scanButtonDisabled]}
-            onPress={onScan}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.scanButtonText}>🔍 Escanear ticket</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Botón para cambiar imagen */}
-          <TouchableOpacity
-            style={styles.changeButton}
-            onPress={() => setImage(null)}
-          >
-            <Text style={styles.changeButtonText}>Cambiar imagen</Text>
-          </TouchableOpacity>
-        </>
+        </View>
       )}
+
+      {/* BOTONES */}
+      <View style={styles.buttonGroup}>
+        {!image ? (
+          <>
+            <Button
+              title="Tomar Foto"
+              onPress={takePhoto}
+              icon="camera-outline"
+            />
+            <Button
+              title="Desde Galería"
+              onPress={pickImage}
+              variant="secondary"
+              icon="images-outline"
+            />
+          </>
+        ) : (
+          <>
+            <Button
+              title="Escanear Ticket"
+              onPress={onScan}
+              loading={loading}
+              icon="scan-outline"
+            />
+            <Pressable
+              style={styles.changeButton}
+              onPress={() => setImage(null)}
+            >
+              <Text style={styles.changeButtonText}>Cambiar imagen</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -244,29 +241,37 @@ const onScan = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fffbeb',
+    backgroundColor: Colors.backgroundPrimary,
   },
   content: {
     padding: 24,
+    paddingBottom: 40,
+    paddingTop: 60,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#b45309',
+    color: Colors.brandPrimary,
+    marginTop: 12,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#78716c',
-    marginBottom: 24,
+    color: Colors.textSecondary,
+    textAlign: 'center',
     lineHeight: 20,
+    paddingHorizontal: 20,
   },
   imageContainer: {
     position: 'relative',
     marginBottom: 24,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundSecondary,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -282,109 +287,52 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  removeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonGroup: {
-    gap: 12,
-  },
-  primaryButton: {
-    backgroundColor: '#f59e0b',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#f59e0b',
-    fontSize: 16,
-    fontWeight: '600',
+  modeContainer: {
+    marginBottom: 24,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#44403c',
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   modeSelector: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
   },
   modeButton: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#d6d3d1',
-    backgroundColor: '#fff',
+    borderColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.backgroundPrimary,
     alignItems: 'center',
   },
   modeButtonActive: {
-    borderColor: '#f59e0b',
-    backgroundColor: '#f59e0b',
+    borderColor: Colors.brandPrimary,
+    backgroundColor: Colors.brandPrimary,
   },
   modeButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#78716c',
+    color: Colors.textSecondary,
   },
   modeButtonTextActive: {
-    color: '#fff',
+    color: Colors.backgroundPrimary,
   },
-  scanButton: {
-    backgroundColor: '#15803d',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  scanButtonDisabled: {
-    backgroundColor: '#86efac',
-    opacity: 0.7,
-  },
-  scanButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  buttonGroup: {
+    gap: 12,
   },
   changeButton: {
     padding: 12,
     alignItems: 'center',
+    marginTop: 8,
   },
   changeButtonText: {
-    color: '#78716c',
+    color: Colors.textSecondary,
     fontSize: 14,
+    fontWeight: '600',
   },
 });
