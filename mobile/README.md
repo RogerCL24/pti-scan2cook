@@ -86,7 +86,21 @@ Iniciar Expo:
 npx expo start
 ```
 
-Abrir en Expo Go y escanear QR.
+**Abrir en tu dispositivo:**
+
+- **Android:**
+  1. Instala [Expo Go](https://play.google.com/store/apps/details?id=host.exp.exponent) desde Play Store
+  2. Abre Expo Go
+  3. Toca "Scan QR code"
+  4. Escanea el QR que aparece en la terminal
+
+- **iOS:**
+  1. Instala [Expo Go](https://apps.apple.com/app/expo-go/id982107779) desde App Store
+  2. Abre la app Cámara nativa de iOS
+  3. Apunta al QR que aparece en la terminal
+  4. Toca la notificación que aparece para abrir en Expo Go
+
+**Nota:** Si el QR no funciona, en Expo Go puedes introducir manualmente la URL que aparece en la terminal (ej: `exp://192.168.1.130:8081`).
 
 ## 3. Estructura
 
@@ -185,6 +199,11 @@ navigation.navigate('MainTabs', { screen: 'Pantry' });
 - PC y móvil en la misma Wi‑Fi
 - Sin VPN/firewall bloqueando
 - Usa tu IP LAN, no localhost
+
+**QR no funciona:**
+
+- Introduce manualmente la URL en Expo Go (ej: `exp://192.168.1.130:8081`)
+- Verifica que el puerto 8081 no esté bloqueado
 
 **Permisos:**
 
