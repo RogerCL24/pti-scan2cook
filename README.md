@@ -83,21 +83,53 @@ graph TD
   A --> F[docs]
   A --> G[ocr]
   
-  B --> B1[server.js]
-  B --> B2[Dockerfile]
-  B --> B3[package.json]
-  
+  subgraph Backend
+    B1[server.js]
+    B2[Dockerfile]
+    B3[package.json]
+    B4[routes: auth, ocr, products]
+  end
+
+  subgraph Frontend
+    C1[index.html]
+    C2[Dockerfile]
+    C3[nginx.conf]
+    C4[src: App, pages, components, api, hooks]
+  end
+
   D --> D1[init.sql]
   D --> D2[seed.sql]
-  
+
   F --> F1[instalacion_docker.md]
   F --> F2[metodologia_git.md]
-  F --> F3[README.md]
-  
+  F --> F3[DEPLOY.md]
+
   A --> H[docker-compose.yml]
   A --> I[README.md]
   A --> J[.gitignore]
 ```
+
+## 🆕 Cambios recientes y archivos importantes
+
+He agregado un frontend tipo PWA (Vite + React + Tailwind) y documentación de despliegue. Aquí un resumen breve para el equipo:
+
+- frontend/
+  - `Dockerfile` - Multi-stage build: genera la app con Vite y sirve los archivos estáticos con Nginx.
+  - `nginx.conf` - Configuración de Nginx que sirve el build y proxya `/api` a `backend:3000`. Se incrementó `client_max_body_size` a 10M para soportar cargas de imágenes.
+  - `src/` - Código fuente React con:
+    - `pages/` - `LoginPage`, `RegisterPage`, `ScanPage`, `ReviewPage`.
+    - `components/` - `Header`, `ErrorModal` (muestra errores completos para debugging), y componentes UI reutilizables.
+    - `api/` - Wrappers Axios (`client.js`, `auth.js`, `ocr.js`, `products.js`) que usan rutas relativas `/api`.
+    - `hooks/useAuth.js` - Manejo de token en localStorage y contexto de autenticación.
+
+- docs/DEPLOY.md - Instrucciones para levantar la aplicación con Docker Compose (recomendado: `docker compose up --build`). Explica variables de entorno necesarias y notas sobre acceso desde la LAN.
+
+Notas rápidas para el equipo:
+
+- No incluir nombres internos de host (`backend:3000`) en el bundle cliente; usar rutas relativas `/api` y dejar que Nginx haga el proxy.
+- Si las imágenes son grandes, comprimir o redimensionar en el cliente antes de enviar para evitar 413 y mejorar UX (no implementado automáticamente).
+- Para desarrollo local, ejecutar `docker compose up --build` y acceder desde el móvil usando la IP del equipo en la LAN apuntando al puerto del frontend (por defecto 5173 en el host, mapeado a 80 en el contenedor en la configuración actual).
+
 
 ### 3️⃣ Cómo trabajar (guía)
 1. Lee la guía dentro de /docs/ -> [metodologia_git.md](docs/metodologia_git.md)
