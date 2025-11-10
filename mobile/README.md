@@ -11,14 +11,13 @@ Aplicación móvil (React Native + Expo) para:
 ## Índice
 
 1. Requisitos
-2. Backend (Docker)
-3. Configuración frontend
-4. Estructura
-5. Navegación
-6. Flujo OCR
-7. Problemas comunes
-8. Hecho / Pendiente
-9. Checklist rápida
+2. Configuración
+3. Estructura
+4. Navegación
+5. Flujo OCR
+6. Problemas comunes
+7. Hecho / Pendiente
+8. Checklist
 
 ## 1. Requisitos
 
@@ -26,33 +25,33 @@ Aplicación móvil (React Native + Expo) para:
 - npm o yarn
 - Expo (npx)
 - Dispositivo físico (misma Wi‑Fi) o emulador
-- Docker + Docker Compose (backend)
+- Backend corriendo (Docker + Docker Compose)
 
-## 2. Backend (Docker)
+**Levantar el backend:**
 
 En la raíz del repositorio:
 
 ```bash
+# Opción 1: en segundo plano (recomendado)
 docker compose up -d
+
+# Opción 2: ver logs en tiempo real (bloquea terminal)
+docker compose up
 ```
 
-Rutas expuestas (ver backend/app.js):
-
-- POST http://TU_IP:3000/auth/login
-- POST http://TU_IP:3000/auth/register
-- POST http://TU_IP:3000/ocr/gemini
-- POST http://TU_IP:3000/ocr/regex
-- http://TU_IP:3000/products/... (según implementación)
-
-Salud:
+Ver logs si usaste `-d`:
 
 ```bash
-curl http://localhost:3000/health
+docker compose logs -f
 ```
 
-Responde {"ok":true}.
+Detener backend:
 
-## 3. Configuración frontend
+```bash
+docker compose down
+```
+
+## 2. Configuración
 
 Instalar dependencias:
 
@@ -61,16 +60,22 @@ cd mobile
 npm install
 ```
 
-Configurar IP local:
+Configurar IP del backend:
 
 ```javascript
 // src/constants/config.js
-export const API_BASE_URL = 'http://192.168.1.130:3000'; // reemplaza por tu IP
+export const API_BASE_URL = 'http://192.168.1.130:3000'; // 🔴 reemplaza por tu IP
 ```
 
-Ejemplos:
+**Cómo obtener tu IP local:**
 
-- Dispositivo físico: IP LAN (192.168.1.X)
+- Linux: `hostname -I | awk '{print $1}'`
+- macOS: `ipconfig getifaddr en0`
+- Windows: `ipconfig` (buscar IPv4)
+
+**Ejemplos según entorno:**
+
+- Dispositivo físico: tu IP LAN (ej. 192.168.1.X)
 - Android Emulator: http://10.0.2.2:3000
 - Genymotion: http://10.0.3.2:3000
 - iOS Simulator: http://localhost:3000
@@ -81,110 +86,154 @@ Iniciar Expo:
 npx expo start
 ```
 
-Modo LAN y abrir en Expo Go.
+Abrir en Expo Go y escanear QR.
 
-## 4. Estructura
+## 3. Estructura
 
 ```
 mobile/
   App.js
   src/
-    navigation/ (Stack + Tabs)
-    screens/ (Home, Pantry, Scan, Review, Auth, placeholders)
-    services/ (api, auth, ocr, products)
-    context/ (AuthContext)
-    constants/ (colors, config)
-    components/ (Button, Input)
-    utils/ (storage)
+    navigation/
+      AppNavigator.js    (Stack: Login, Register, MainTabs, Review)
+      BottomTabs.js      (Tabs: Home, Pantry, Scan, Recipes, Profile)
+    screens/
+      HomeScreen.js
+      LoginScreen.js
+      RegisterScreen.js
+      PantryScreen.js
+      ScanScreen.js
+      ReviewScreen.js
+      RecipesScreen.js   (placeholder)
+      ProfileScreen.js   (placeholder)
+    services/
+      api.js             (Axios con token)
+      auth.js            (login/register)
+      ocr.js             (subida imagen OCR)
+      products.js
+    context/
+      AuthContext.js     (sesión)
+    constants/
+      colors.js
+      config.js          (API_BASE_URL)
+    components/
+      Button.js
+      Input.js
+    utils/
+      storage.js
 ```
 
-api.js: Axios con baseURL y token.
+## 4. Navegación
 
-## 5. Navegación
-
-Stack:
+**Stack:**
 
 - Login
 - Register
-- MainTabs
-- Review
+- MainTabs (contiene los tabs)
+- Review (modal para revisar productos)
 
-Tabs:
+**Tabs:**
 
 - Home
 - Pantry
 - Scan
-- Recipes (placeholder)
-- Profile (placeholder)
+- Recipes (pendiente)
+- Profile (pendiente)
 
-Post login/registro:
+Después de login/registro:
 
 ```js
 navigation.replace('MainTabs');
 ```
 
-Desde Review a Pantry:
+Desde Review ir a Pantry:
 
 ```js
 navigation.navigate('MainTabs', { screen: 'Pantry' });
 ```
 
-## 6. Flujo OCR
+## 5. Flujo OCR
 
-1. Foto o imagen de galería.
-2. Selección modo: gemini o regex.
-3. Envío FormData:
-   - /ocr/gemini
-   - /ocr/regex
-     Campo: image.
-4. Respuesta con products.
-5. Navegación a Review.
-6. Guardar y opcional ir a Pantry.
+1. Usuario abre Scan
+2. Toma foto o selecciona de galería
+3. Elige modo: gemini o regex
+4. App envía imagen (FormData) a:
+   - POST /ocr/gemini
+   - POST /ocr/regex
+5. Backend devuelve lista de productos
+6. App navega a Review con los productos
+7. Usuario confirma y guarda en despensa
+8. Opcional: ir a Pantry
 
-## 7. Problemas comunes
+## 6. Problemas comunes
 
-- 404: IP incorrecta o backend no levantado.
-- No cambia a Tabs: usar navigation.replace('MainTabs').
-- No navega a Pantry desde Review: usar navigation.navigate('MainTabs', { screen: 'Pantry' }).
-- Dispositivo no conecta: misma Wi‑Fi, sin firewall/VPN.
-- Permisos: aceptar cámara/galería.
-- Imagen grande: usar <8MB.
-- 401: sesión expirada → relogin.
-- FormData:
+**404 en peticiones:**
 
-```js
-formData.append('image', { uri, type: 'image/jpeg', name: 'ticket.jpg' });
-```
+- Verifica que API_BASE_URL tiene tu IP correcta
+- Asegúrate que el backend está corriendo (`docker compose up -d`)
 
-## 8. Hecho
+**No navega a Tabs tras login:**
 
-- Autenticación con token (AsyncStorage)
-- Stack + Tabs
-- OCR gemini / regex (cámara / galería)
-- Review de productos
-- Pantry básico
-- Botones con iconos
-- Interceptor Axios
+- Usa `navigation.replace('MainTabs')`
 
-Pendiente
+**No va a Pantry desde Review:**
 
-- Recipes (listado, detalle, integración despensa)
-- Profile (datos, logout UI)
-- Pantry CRUD completo (editar/eliminar)
-- UX Scan (overlay, recorte)
-- Manejo global de expiración
-- Estados vacíos y mejores mensajes
-- Notificaciones / sugerencias
+- Usa `navigation.navigate('MainTabs', { screen: 'Pantry' })`
 
-## 9. Checklist rápida
+**Dispositivo no conecta:**
 
-- [ ] docker compose up
-- [ ] API_BASE_URL correcto
-- [ ] Expo start sin errores
-- [ ] Login/Register ok
-- [ ] Tabs visibles
-- [ ] Scan obtiene productos
-- [ ] Review → Pantry funciona
-- [ ] Sin 404 en consola
+- PC y móvil en la misma Wi‑Fi
+- Sin VPN/firewall bloqueando
+- Usa tu IP LAN, no localhost
 
-Solo ajustar la IP en config.js para cada desarrollador.
+**Permisos:**
+
+- Acepta los permisos de cámara/galería cuando se soliciten
+
+**Imagen muy grande:**
+
+- Selecciona imágenes menores a 8MB
+
+**Error 401:**
+
+- Token expirado, vuelve a hacer login
+
+## 7. Hecho
+
+✅ Autenticación (login/register con token en AsyncStorage)  
+✅ Navegación Stack + Bottom Tabs  
+✅ OCR con cámara y galería (modos gemini/regex)  
+✅ Revisión de productos escaneados  
+✅ Pantry básico  
+✅ Botones con iconos  
+✅ Cliente API con interceptores
+
+## 8. Pendiente
+
+⏳ Recipes (listado, detalle, integración con despensa)  
+⏳ Profile (datos de usuario, logout)  
+⏳ Pantry CRUD completo (editar cantidades, eliminar)  
+⏳ Manejo automático de sesión expirada  
+⏳ Estados vacíos y mejores mensajes de error  
+⏳ Notificaciones y sugerencias de recetas
+
+## 9. Checklist
+
+Antes de probar:
+
+- [ ] Backend corriendo (`docker compose up -d`)
+- [ ] API_BASE_URL con tu IP configurada en `config.js`
+- [ ] `npm install` ejecutado
+- [ ] `npx expo start` sin errores
+- [ ] Expo Go instalado en el dispositivo
+
+Flujo de prueba:
+
+- [ ] Registrar/Login funciona
+- [ ] Ves las 5 pestañas (Home, Pantry, Scan, Recipes, Profile)
+- [ ] Puedes escanear un ticket (cámara o galería)
+- [ ] Ves los productos en Review
+- [ ] Puedes guardar en Pantry
+- [ ] No hay errores 404 en la consola
+
+**Nota:** Cada desarrollador debe configurar su propia IP en `config.js` según su entorno.
