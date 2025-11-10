@@ -10,14 +10,14 @@ Aplicación móvil (React Native + Expo) para:
 
 ## Índice
 
-[1. Requisitos](#1-requisitos)
-[2. Configuración](#2-configuración)
-[3. Estructura](#3-estructura)
-[4. Navegación](#4-navegación)
-[5. Flujo OCR](#5-flujo-ocr)
-[6. Problemas comunes](#6-problemas-comunes)
-[7. Hecho / Pendiente](#7-hecho)
-[8. Checklist](#9-checklist)
+- [1. Requisitos](#1-requisitos)
+- [2. Configuración](#2-configuración)
+- [3. Estructura](#3-estructura)
+- [4. Navegación](#4-navegación)
+- [5. Flujo OCR](#5-flujo-ocr)
+- [6. Problemas comunes](#6-problemas-comunes)
+- [7. Hecho / Pendiente](#7-hecho)
+- [8. Checklist](#9-checklist)
 
 ## 1. Requisitos
 
