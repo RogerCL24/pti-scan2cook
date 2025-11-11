@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginUser, registerUser } from '../services/auth';
 import { saveToken, getToken, removeToken } from '../utils/storage';
 
@@ -17,11 +18,14 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       const savedToken = await getToken();
+      const savedUserRaw = await AsyncStorage.getItem('user');
       if (savedToken) {
         setToken(savedToken);
-        // Aquí podrías hacer una llamada para obtener datos del usuario
-        // Por ahora solo marcamos que hay sesión
-        setUser({ token: savedToken });
+        if (savedUserRaw) {
+          setUser(JSON.parse(savedUserRaw));
+        } else {
+          setUser({ token: savedToken });
+        }
       }
     } catch (error) {
       console.error('Error verificando auth:', error);
@@ -36,6 +40,8 @@ export const AuthProvider = ({ children }) => {
       const { token, user: userData } = response;
 
       await saveToken(token);
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+
       setToken(token);
       setUser(userData);
 
@@ -52,12 +58,57 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const response = await registerUser(name, email, password);
-      const { token, user: userData } = response;
+      console.log('>> REGISTER response:', response);
+
+      // Backend NO devuelve token, solo user
+      // Hacer login automático para obtener token
+      console.log('>> Haciendo login automático tras registro...');
+      let loginResp;
+      try {
+        loginResp = await loginUser(email, password);
+        console.log('>> LOGIN automático response:', loginResp);
+      } catch (loginError) {
+        console.error('>> Error en login automático:', loginError);
+        return {
+          success: false,
+          error:
+            'Registro exitoso pero no se pudo iniciar sesión automáticamente. Intenta hacer login.',
+        };
+      }
+
+      const token = loginResp?.token;
+      const userData = loginResp?.user || response;
+
+      if (!token) {
+        return {
+          success: false,
+          error: 'No se recibió token tras registro',
+        };
+      }
+
+      // Si backend devuelve name genérico "Usuario", usar el introducido
+      const effectiveName =
+        userData?.name && userData.name !== 'Usuario' ? userData.name : name;
+
+      const normalizedUser = {
+        id: userData.id,
+        email: userData.email || email,
+        name: effectiveName,
+        created_at: userData.created_at,
+      };
+
+      console.log('>> Guardando token y usuario:', {
+        token: token.substring(0, 20) + '...',
+        user: normalizedUser,
+      });
 
       await saveToken(token);
-      setToken(token);
-      setUser(userData);
+      await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
 
+      setToken(token);
+      setUser(normalizedUser);
+
+      console.log('✅ Registro y login completados');
       return { success: true };
     } catch (error) {
       console.error('Error en registro:', error);
@@ -70,6 +121,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await removeToken();
+    await AsyncStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };
@@ -98,3 +150,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export { AuthContext };

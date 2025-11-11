@@ -7,6 +7,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import BottomTabs from './BottomTabs';
+import AddProductScreen from '../screens/AddProductScreen';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,11 @@ export default function AppNavigator() {
           name="Review"
           component={ReviewScreen}
           options={{ title: 'Revisar Productos' }}
+        />
+        <Stack.Screen
+          name="AddProduct"
+          component={AddProductScreen}
+          options={{ title: 'Añadir producto' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

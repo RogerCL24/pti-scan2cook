@@ -58,3 +58,19 @@ export const updateProduct = async (productId, data) => {
     throw error;
   }
 };
+
+/**
+ * Crear un nuevo producto
+ * @param {object} product - Datos del producto a crear
+ * @returns {Promise<object>}
+ */
+export const createProduct = async (product) => {
+  try {
+    const res = await api.post('/products', product);
+    // El backend puede devolver { product } o el objeto directo
+    return res.data?.product || res.data;
+  } catch (error) {
+    console.error('Create Product Error:', error);
+    throw error;
+  }
+};

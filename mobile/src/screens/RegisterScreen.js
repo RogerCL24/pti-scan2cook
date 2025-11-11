@@ -79,15 +79,17 @@ export default function RegisterScreen({ navigation }) {
       const result = await register(name.trim(), email.trim(), password);
 
       if (result.success) {
-        // Registro exitoso → Navegar a ScanScreen
-        Alert.alert('¡Bienvenido!', 'Tu cuenta ha sido creada exitosamente', [
+        console.log('🎉 Registro exitoso, navegando a MainTabs...');
+        Alert.alert('¡Bienvenido!', 'Cuenta creada', [
           {
             text: 'Continuar',
-            onPress: () => navigation.replace('Scan'),
+            onPress: () => {
+              console.log('👉 Navegando a MainTabs');
+              navigation.replace('MainTabs');
+            },
           },
         ]);
       } else {
-        // Mostrar error
         Alert.alert('Error', result.error || 'Error al registrarse');
       }
     } catch (error) {

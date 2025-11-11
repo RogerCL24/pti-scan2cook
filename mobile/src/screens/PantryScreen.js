@@ -157,6 +157,18 @@ export default function PantryScreen({ navigation }) {
             </Text>
           </View>
         </View>
+
+        {/* Botón para añadir producto */}
+        <Pressable
+          onPress={() => navigation.navigate('AddProduct')}
+          style={({ pressed }) => [
+            styles.iconBtn,
+            pressed && styles.iconPressed,
+          ]}
+          android_ripple={{ color: '#ddd', borderless: true }}
+        >
+          <Ionicons name="add" size={24} color={Colors.brandPrimary} />
+        </Pressable>
       </View>
 
       {/* LISTA DE PRODUCTOS */}
@@ -209,6 +221,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   title: {
     fontSize: 22,
@@ -327,5 +344,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.backgroundPrimary,
+  },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 24,
+    backgroundColor: Colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconPressed: {
+    opacity: 0.7,
   },
 });
