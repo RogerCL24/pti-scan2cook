@@ -8,9 +8,10 @@ const router = express.Router();
  * GET /products
  * Devuelve todos los productos del usuario
  */
-router.get("/", async (req, res) => {
+router.get("/", authGuard, async (req, res) => {
+  const userId = req.userId;
   try {
-    const result = await pool.query("SELECT * FROM products ORDER BY id ASC");
+    const result = await pool.query("SELECT * FROM products WHERE user_id = $1 ORDER BY id ASC", [userId]);
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error al obtener productos:", err);
@@ -22,15 +23,16 @@ router.get("/", async (req, res) => {
  * POST /products
  * Crea un nuevo producto
  */
-router.post("/", async (req, res) => {
-  const { user_id, name, quantity, category, expiration_date } = req.body;
+router.post("/", authGuard, async (req, res) => {
+  const userId = req.userId;
+  const { name, quantity, category, expiration_date } = req.body;
 
   try {
     const result = await pool.query(
       `INSERT INTO products (user_id, name, quantity, category, expiration_date)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [user_id, name, quantity, category, expiration_date]
+      [userId, name, quantity, category, expiration_date]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -43,10 +45,14 @@ router.post("/", async (req, res) => {
  * DELETE /products/:id
  * Elimina un producto por ID
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authGuard, async (req, res) => {
+  const userId = req.userId;
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM products WHERE id = $1", [id]);
+    const result = await pool.query("DELETE FROM products WHERE id = $1 AND user_id = $2", [id, userId]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "PRODUCT_NOT_FOUND" });
+    }
     res.status(204).send();
   } catch (err) {
     console.error("❌ Error al eliminar producto:", err);
