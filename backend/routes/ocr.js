@@ -55,8 +55,18 @@ router.post("/vision", upload.single("image"), async (req, res) => {
 router.post("/regex", upload.single("image"), async (req, res) => {
   try {
     const text = await analyzeReceipt(req.file.path);
+    // Persist ticket so products can be linked
+    const userId = 1; // temporal
+    const insertQuery = `
+      INSERT INTO tickets (user_id, image_path, raw_text, processed)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, created_at;
+    `;
+    const ticketResult = await pool.query(insertQuery, [userId, req.file.path, text, true]);
+    const ticketId = ticketResult.rows[0].id;
+
     const products = parseWithRegex(text);
-    res.json({ products });
+    res.json({ products, ticket: { id: ticketId } });
   } catch (err) {
     console.error("❌ Error OCR Regex:", err);
     res.status(500).json({ error: "OCR_REGEX_FAILED" });
@@ -69,8 +79,18 @@ router.post("/regex", upload.single("image"), async (req, res) => {
 router.post("/gemini", upload.single("image"), async (req, res) => {
   try {
     const text = await analyzeReceipt(req.file.path);
+    // Persist ticket so products can be linked
+    const userId = 1; // temporal
+    const insertQuery = `
+      INSERT INTO tickets (user_id, image_path, raw_text, processed)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, created_at;
+    `;
+    const ticketResult = await pool.query(insertQuery, [userId, req.file.path, text, true]);
+    const ticketId = ticketResult.rows[0].id;
+
     const products = await parseWithGemini(text);
-    res.json({ products });
+    res.json({ products, ticket: { id: ticketId } });
   } catch (err) {
     console.error("❌ Error OCR Gemini:", err);
     res.status(500).json({ error: "OCR_GEMINI_FAILED" });
