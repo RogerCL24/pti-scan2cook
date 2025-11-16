@@ -47,3 +47,4 @@ mobile/*.mobileprovision
 mobile/*.orig.*
 mobile/web-build/
 
+env

@@ -40,6 +40,42 @@ router.post("/", async (req, res) => {
 });
 
 /**
+ * PUT /products/:id
+ * Actualiza la cantidad (y opcionalmente otros campos) de un producto
+ * Body: { quantity, name?, category?, expiration_date? }
+ */
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { quantity, name, category, expiration_date } = req.body;
+
+  if (!Number.isInteger(quantity) || quantity < 0) {
+    return res.status(400).json({ error: "INVALID_QUANTITY" });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE products
+         SET quantity       = $1,
+             name           = COALESCE($2, name),
+             category       = COALESCE($3, category),
+             expiration_date= COALESCE($4, expiration_date)
+       WHERE id = $5
+       RETURNING *`,
+      [quantity, name || null, category || null, expiration_date || null, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "NOT_FOUND" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error al actualizar producto:", err);
+    res.status(500).json({ error: "DB_ERROR" });
+  }
+});
+
+/**
  * DELETE /products/:id
  * Elimina un producto por ID
  */

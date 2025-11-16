@@ -69,3 +69,11 @@ CREATE TABLE ingredients (
   product_name VARCHAR(100) NOT NULL,
   quantity VARCHAR(50)
 );
+
+-- Relaciona el userId de Alexa con un usuario local
+CREATE TABLE IF NOT EXISTS alexa_link (
+  alexa_user_id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+);
+
+

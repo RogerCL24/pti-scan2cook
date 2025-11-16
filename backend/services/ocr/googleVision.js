@@ -1,5 +1,4 @@
 import vision from "@google-cloud/vision";
-import fs from "fs";
 
 // Crea el cliente con las credenciales del JSON
 const client = new vision.ImageAnnotatorClient({
