@@ -4,6 +4,7 @@
 // Busca algo como 192.168.X.X
 
 export const API_BASE_URL = 'http://192.168.1.130:3000';
+//export const API_BASE_URL = 'http://10.192.233.6:3000';
 
 // Ejemplo:
 // export const API_BASE_URL = 'http://192.168.1.45:3000/api';
