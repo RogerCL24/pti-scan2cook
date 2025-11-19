@@ -1,9 +1,9 @@
 // Encuentra tu IP local:
-// - Linux/Mac: ifconfig | grep "inet "
+// - Linux/Mac: hostname -I | awk '{print $1}'
 // - Windows: ipconfig
 // Busca algo como 192.168.X.X
 
-export const API_BASE_URL = 'http://192.168.1.130:3000';
+export const API_BASE_URL = 'http://192.168.1.133:3000';
 //export const API_BASE_URL = 'http://10.192.233.6:3000';
 
 // Ejemplo:
