@@ -17,7 +17,6 @@ export default function AddProductScreen({ navigation }) {
     name: '',
     quantity: '1',
     category: '',
-    expiration_date: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -35,10 +34,9 @@ export default function AddProductScreen({ navigation }) {
         name,
         quantity,
         category: form.category?.trim() || undefined,
-        expiration_date: form.expiration_date?.trim() || undefined,
       });
       Alert.alert('Guardado', 'Producto añadido.');
-      navigation.goBack(); // Pantry se recarga al enfocar
+      navigation.goBack();
     } catch (e) {
       Alert.alert('Error', e.message || 'No se pudo crear el producto');
     } finally {
@@ -83,14 +81,6 @@ export default function AddProductScreen({ navigation }) {
           />
         </View>
       </View>
-
-      <Text style={styles.label}>Caducidad (YYYY-MM-DD)</Text>
-      <TextInput
-        style={styles.input}
-        value={form.expiration_date}
-        onChangeText={(t) => setForm((f) => ({ ...f, expiration_date: t }))}
-        placeholder="2025-12-31"
-      />
 
       <View style={styles.actions}>
         <Pressable

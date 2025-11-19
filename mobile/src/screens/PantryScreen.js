@@ -96,11 +96,6 @@ export default function PantryScreen({ navigation }) {
             </View>
           )}
         </View>
-        {item.expiration_date && (
-          <Text style={styles.expirationText}>
-            Caduca: {new Date(item.expiration_date).toLocaleDateString('es-ES')}
-          </Text>
-        )}
       </View>
 
       <Pressable style={styles.deleteButton} onPress={() => handleDelete(item)}>
