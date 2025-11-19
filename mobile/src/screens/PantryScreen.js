@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -10,7 +11,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
 import { getUserProducts, deleteProduct } from '../services/products';
 
@@ -18,21 +18,13 @@ export default function PantryScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const lastLoadRef = useRef(null);
 
-  // Cargar productos cuando la pantalla se enfoca
-  useFocusEffect(
-    useCallback(() => {
-      loadProducts();
-    }, [])
-  );
-
-  // Cargar productos del backend
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
-      console.log('📦 Cargando productos de la despensa...');
       const data = await getUserProducts();
-      console.log('✅ Productos cargados:', data.length);
       setProducts(data);
+      lastLoadRef.current = Date.now();
     } catch (error) {
       console.error('❌ Error cargando productos:', error);
       Alert.alert('Error', 'No se pudieron cargar los productos');
@@ -40,97 +32,93 @@ export default function PantryScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  // Refrescar productos (pull to refresh)
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadProducts();
-  };
+  useFocusEffect(
+    useCallback(() => {
+      const now = Date.now();
+      const lastLoad = lastLoadRef.current;
+      const shouldLoad = !lastLoad || now - lastLoad > 30000;
 
-  // Eliminar producto
-  const handleDelete = (product) => {
-    Alert.alert(
-      'Eliminar producto',
-      `¿Estás seguro de que quieres eliminar "${product.name}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteProduct(product.id);
-              // Actualizar lista localmente
-              setProducts((prev) => prev.filter((p) => p.id !== product.id));
-              Alert.alert('Eliminado', 'Producto eliminado correctamente');
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar el producto');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // Renderizar cada producto
-  const renderProduct = ({ item }) => (
-    <View style={styles.productCard}>
-      <View style={styles.productIcon}>
-        <Ionicons
-          name="nutrition-outline"
-          size={28}
-          color={Colors.brandSecondary}
-        />
-      </View>
-
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <View style={styles.productMeta}>
-          <View style={styles.quantityBadge}>
-            <Text style={styles.quantityText}>x{item.quantity || 1}</Text>
-          </View>
-          {item.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{item.category}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <Pressable style={styles.deleteButton} onPress={() => handleDelete(item)}>
-        <Ionicons name="trash-outline" size={22} color={Colors.systemError} />
-      </Pressable>
-    </View>
+      if (shouldLoad) {
+        console.log('🔄 Cargando productos (cache expirado)');
+        loadProducts();
+      } else {
+        console.log(
+          '✅ Cache vigente (hace',
+          Math.floor((now - lastLoad) / 1000),
+          's)'
+        );
+      }
+    }, [loadProducts])
   );
 
-  // Pantalla vacía
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="basket-outline" size={80} color={Colors.textSecondary} />
-      <Text style={styles.emptyTitle}>Despensa vacía</Text>
-      <Text style={styles.emptyText}>
-        Escanea un ticket para añadir productos a tu despensa
-      </Text>
-      <Pressable
-        style={styles.scanButton}
-        onPress={() => navigation.navigate('Scan')}
-      >
-        <Ionicons
-          name="scan-outline"
-          size={20}
-          color={Colors.backgroundPrimary}
-        />
-        <Text style={styles.scanButtonText}>Escanear ticket</Text>
-      </Pressable>
-    </View>
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    lastLoadRef.current = null; // Fuerza recarga
+    loadProducts();
+  }, [loadProducts]);
+
+  const handleDelete = useCallback((product) => {
+    Alert.alert('Eliminar producto', `¿Eliminar "${product.name}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteProduct(product.id);
+            setProducts((prev) => prev.filter((p) => p.id !== product.id));
+            Alert.alert('Eliminado', 'Producto eliminado de la despensa');
+          } catch (error) {
+            console.error('Error eliminando producto:', error);
+            Alert.alert('Error', 'No se pudo eliminar el producto');
+          }
+        },
+      },
+    ]);
+  }, []);
+
+  const renderProduct = useCallback(
+    ({ item }) => (
+      <View style={styles.productCard}>
+        <View style={styles.productIcon}>
+          <Ionicons
+            name="nutrition-outline"
+            size={28}
+            color={Colors.brandSecondary}
+          />
+        </View>
+
+        <View style={styles.productInfo}>
+          <Text style={styles.productName}>{item.name}</Text>
+          <View style={styles.productMeta}>
+            <View style={styles.quantityBadge}>
+              <Text style={styles.quantityText}>x{item.quantity || 1}</Text>
+            </View>
+            {item.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{item.category}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <Pressable
+          style={styles.deleteButton}
+          onPress={() => handleDelete(item)}
+        >
+          <Ionicons name="trash-outline" size={22} color={Colors.systemError} />
+        </Pressable>
+      </View>
+    ),
+    [handleDelete]
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.center}>
         <ActivityIndicator size="large" color={Colors.brandPrimary} />
-        <Text style={styles.loadingText}>Cargando despensa...</Text>
       </View>
     );
   }
@@ -152,37 +140,36 @@ export default function PantryScreen({ navigation }) {
             </Text>
           </View>
         </View>
-
-        {/* Botón para añadir producto */}
-        <Pressable
-          onPress={() => navigation.navigate('AddProduct')}
-          style={({ pressed }) => [
-            styles.iconBtn,
-            pressed && styles.iconPressed,
-          ]}
-          android_ripple={{ color: '#ddd', borderless: true }}
-        >
-          <Ionicons name="add" size={24} color={Colors.brandPrimary} />
-        </Pressable>
       </View>
 
       {/* LISTA DE PRODUCTOS */}
       <FlatList
         data={products}
-        renderItem={renderProduct}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={
-          products.length === 0 ? styles.emptyList : styles.list
-        }
-        ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[Colors.brandPrimary]}
-          />
+        renderItem={renderProduct}
+        contentContainerStyle={styles.list}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons
+              name="basket-outline"
+              size={64}
+              color={Colors.textSecondary}
+            />
+            <Text style={styles.emptyText}>Tu despensa está vacía</Text>
+            <Text style={styles.emptySubtext}>
+              Escanea un ticket para añadir productos
+            </Text>
+          </View>
         }
       />
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        onPress={() => navigation.navigate('AddProduct')}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </Pressable>
     </View>
   );
 }
@@ -217,11 +204,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -234,9 +216,6 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
-  },
-  emptyList: {
-    flex: 1,
   },
   productCard: {
     flexDirection: 'row',
@@ -298,56 +277,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.backgroundPrimary,
   },
-  expirationText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
   deleteButton: {
     padding: 8,
   },
-  emptyContainer: {
+  empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '500',
     color: Colors.textPrimary,
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 8,
   },
-  emptyText: {
+  emptySubtext: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
   },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.brandPrimary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  scanButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.backgroundPrimary,
-  },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 24,
-    backgroundColor: Colors.backgroundSecondary,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
   },
-  iconPressed: {
+  fabPressed: {
     opacity: 0.7,
   },
 });
