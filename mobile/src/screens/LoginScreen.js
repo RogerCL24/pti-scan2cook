@@ -28,15 +28,15 @@ export default function LoginScreen({ navigation }) {
     const newErrors = {};
 
     if (!email.trim()) {
-      newErrors.email = 'El email es obligatorio';
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = 'Invalid email';
     }
 
     if (!password) {
-      newErrors.password = 'La contraseña es obligatoria';
+      newErrors.password = 'Password is required';
     } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -56,12 +56,12 @@ export default function LoginScreen({ navigation }) {
       const result = await login(email.trim(), password);
 
       if (result.success) {
-        navigation.replace('MainTabs'); // Cambiar 'Home' por 'MainTabs'
+        navigation.replace('MainTabs');
       } else {
-        Alert.alert('Error', result.error || 'Error al iniciar sesión');
+        Alert.alert('Error', result.error || 'Could not sign in');
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo conectar con el servidor');
+      Alert.alert('Error', 'Could not connect to server');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function LoginScreen({ navigation }) {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 
           {/* FORMULARIO */}
@@ -93,7 +93,7 @@ export default function LoginScreen({ navigation }) {
               label="Email"
               value={email}
               onChangeText={setEmail}
-              placeholder="tu@email.com"
+              placeholder="your@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
               error={errors.email}
@@ -101,27 +101,23 @@ export default function LoginScreen({ navigation }) {
             />
 
             <Input
-              label="Contraseña"
+              label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="Tu contraseña"
+              placeholder="Your password"
               secureTextEntry
               error={errors.password}
               icon="lock-closed-outline"
             />
 
-            <Button
-              title="Iniciar Sesión"
-              onPress={handleLogin}
-              loading={loading}
-            />
+            <Button title="Sign in" onPress={handleLogin} loading={loading} />
           </View>
 
           {/* FOOTER */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>¿No tienes cuenta?</Text>
+            <Text style={styles.footerText}>Don't have an account?</Text>
             <Pressable onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>Regístrate aquí</Text>
+              <Text style={styles.linkText}>Sign up here</Text>
             </Pressable>
           </View>
         </View>

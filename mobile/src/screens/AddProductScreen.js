@@ -23,10 +23,9 @@ export default function AddProductScreen({ navigation }) {
   const onSave = async () => {
     const name = form.name.trim();
     const quantity = parseInt(form.quantity, 10) || 1;
-    if (!name)
-      return Alert.alert('Campos requeridos', 'El nombre es obligatorio.');
+    if (!name) return Alert.alert('Required fields', 'Name is required.');
     if (quantity <= 0)
-      return Alert.alert('Cantidad inválida', 'Debe ser mayor a 0.');
+      return Alert.alert('Invalid quantity', 'Must be greater than 0.');
 
     setSaving(true);
     try {
@@ -35,10 +34,10 @@ export default function AddProductScreen({ navigation }) {
         quantity,
         category: form.category?.trim() || undefined,
       });
-      Alert.alert('Guardado', 'Producto añadido.');
+      Alert.alert('Saved', 'Product added.');
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Error', e.message || 'No se pudo crear el producto');
+      Alert.alert('Error', e.message || 'Could not create product');
     } finally {
       setSaving(false);
     }
@@ -46,20 +45,20 @@ export default function AddProductScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Añadir producto</Text>
+      <Text style={styles.title}>Add product</Text>
 
-      <Text style={styles.label}>Nombre</Text>
+      <Text style={styles.label}>Name</Text>
       <TextInput
         style={styles.input}
         value={form.name}
         onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
-        placeholder="Ej: Leche entera"
+        placeholder="e.g. Whole milk"
         autoCapitalize="sentences"
       />
 
       <View style={styles.row}>
         <View style={styles.col}>
-          <Text style={styles.label}>Cantidad</Text>
+          <Text style={styles.label}>Quantity</Text>
           <TextInput
             style={styles.input}
             value={form.quantity}
@@ -71,12 +70,12 @@ export default function AddProductScreen({ navigation }) {
           />
         </View>
         <View style={styles.col}>
-          <Text style={styles.label}>Categoría</Text>
+          <Text style={styles.label}>Category</Text>
           <TextInput
             style={styles.input}
             value={form.category}
             onChangeText={(t) => setForm((f) => ({ ...f, category: t }))}
-            placeholder="Lácteos, Granos..."
+            placeholder="Dairy, Grains..."
             autoCapitalize="words"
           />
         </View>
@@ -90,7 +89,7 @@ export default function AddProductScreen({ navigation }) {
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.btnOutlineText}>Cancelar</Text>
+          <Text style={styles.btnOutlineText}>Cancel</Text>
         </Pressable>
         <Pressable
           onPress={onSave}
@@ -104,7 +103,7 @@ export default function AddProductScreen({ navigation }) {
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.btnPrimaryText}>Guardar</Text>
+            <Text style={styles.btnPrimaryText}>Save</Text>
           )}
         </Pressable>
       </View>

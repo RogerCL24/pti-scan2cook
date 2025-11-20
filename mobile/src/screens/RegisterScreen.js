@@ -33,30 +33,30 @@ export default function RegisterScreen({ navigation }) {
 
     // Validar nombre
     if (!name.trim()) {
-      newErrors.name = 'El nombre es obligatorio';
+      newErrors.name = 'Name is required';
     } else if (name.trim().length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+      newErrors.name = 'Name must be at least 2 characters';
     }
 
     // Validar email
     if (!email.trim()) {
-      newErrors.email = 'El email es obligatorio';
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = 'Invalid email';
     }
 
     // Validar password
     if (!password) {
-      newErrors.password = 'La contraseña es obligatoria';
+      newErrors.password = 'Password is required';
     } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     // Validar confirmación de password
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Confirma tu contraseña';
+      newErrors.confirmPassword = 'Confirm your password';
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     setErrors(newErrors);
@@ -80,9 +80,9 @@ export default function RegisterScreen({ navigation }) {
 
       if (result.success) {
         console.log('🎉 Registro exitoso, navegando a MainTabs...');
-        Alert.alert('¡Bienvenido!', 'Cuenta creada', [
+        Alert.alert('Welcome!', 'Account created', [
           {
-            text: 'Continuar',
+            text: 'Continue',
             onPress: () => {
               console.log('👉 Navegando a MainTabs');
               navigation.replace('MainTabs');
@@ -90,10 +90,10 @@ export default function RegisterScreen({ navigation }) {
           },
         ]);
       } else {
-        Alert.alert('Error', result.error || 'Error al registrarse');
+        Alert.alert('Error', result.error || 'Could not register');
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo conectar con el servidor');
+      Alert.alert('Error', 'Could not connect to server');
     } finally {
       setLoading(false);
     }
@@ -116,19 +116,19 @@ export default function RegisterScreen({ navigation }) {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Crear Cuenta</Text>
+            <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              Únete a Scan2Cook y gestiona tu despensa
+              Join Scan2Cook and manage your pantry
             </Text>
           </View>
 
           {/* FORMULARIO */}
           <View style={styles.form}>
             <Input
-              label="Nombre"
+              label="Name"
               value={name}
               onChangeText={setName}
-              placeholder="Tu nombre"
+              placeholder="Your name"
               autoCapitalize="words"
               error={errors.name}
               icon="person-outline"
@@ -138,7 +138,7 @@ export default function RegisterScreen({ navigation }) {
               label="Email"
               value={email}
               onChangeText={setEmail}
-              placeholder="tu@email.com"
+              placeholder="your@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
               error={errors.email}
@@ -146,27 +146,27 @@ export default function RegisterScreen({ navigation }) {
             />
 
             <Input
-              label="Contraseña"
+              label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Minimum 6 characters"
               secureTextEntry
               error={errors.password}
               icon="lock-closed-outline"
             />
 
             <Input
-              label="Confirmar Contraseña"
+              label="Confirm Password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Repite tu contraseña"
+              placeholder="Repeat your password"
               secureTextEntry
               error={errors.confirmPassword}
               icon="lock-closed-outline"
             />
 
             <Button
-              title="Crear Cuenta"
+              title="Create Account"
               onPress={handleRegister}
               loading={loading}
             />
@@ -174,9 +174,9 @@ export default function RegisterScreen({ navigation }) {
 
           {/* FOOTER */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>¿Ya tienes cuenta?</Text>
+            <Text style={styles.footerText}>Already have an account?</Text>
             <Pressable onPress={() => navigation.goBack()}>
-              <Text style={styles.linkText}>Inicia sesión</Text>
+              <Text style={styles.linkText}>Sign in</Text>
             </Pressable>
           </View>
         </View>

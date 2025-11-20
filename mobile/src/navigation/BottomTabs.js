@@ -27,15 +27,33 @@ export default function BottomTabs() {
             Recipes: 'book-outline',
             Profile: 'person-outline',
           };
-          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+          return (
+            <Ionicons name={icons[route.name]} size={size} color={color} />
+          );
         },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Pantry" component={PantryScreen} options={{ title: 'Despensa' }} />
-      <Tab.Screen name="Scan" component={ScanScreen} options={{ title: 'Escanear' }} />
-      <Tab.Screen name="Recipes" component={RecipesScreen} options={{ title: 'Recetas' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
+      <Tab.Screen
+        name="Pantry"
+        component={PantryScreen}
+        options={{ title: 'Pantry' }}
+      />
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{ title: 'Scan' }}
+      />
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesScreen}
+        options={{ title: 'Recipes' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 }

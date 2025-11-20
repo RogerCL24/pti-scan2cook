@@ -16,10 +16,10 @@ export default function ProfileScreen({ navigation }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert('Cerrar sesión', '¿Seguro que quieres cerrar sesión?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Salir',
+        text: 'Sign out',
         style: 'destructive',
         onPress: async () => {
           setLoggingOut(true);
@@ -27,7 +27,7 @@ export default function ProfileScreen({ navigation }) {
             await logout();
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
           } catch {
-            Alert.alert('Error', 'No se pudo cerrar sesión.');
+            Alert.alert('Error', 'Could not sign out.');
           } finally {
             setLoggingOut(false);
           }
@@ -51,19 +51,19 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{firstLetter.toUpperCase()}</Text>
           </View>
-          <Text style={styles.name}>{user?.name || 'Usuario'}</Text>
-          <Text style={styles.email}>{user?.email || 'email@dominio.com'}</Text>
+          <Text style={styles.name}>{user?.name || 'User'}</Text>
+          <Text style={styles.email}>{user?.email || 'email@domain.com'}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cuenta</Text>
+          <Text style={styles.sectionTitle}>Account</Text>
 
           <Pressable
             style={({ pressed }) => [styles.item, pressed && styles.pressed]}
             disabled
           >
-            <Text style={styles.itemText}>Editar perfil</Text>
-            <Text style={styles.itemNote}>Próximamente</Text>
+            <Text style={styles.itemText}>Edit profile</Text>
+            <Text style={styles.itemNote}>Coming soon</Text>
           </Pressable>
 
           <Pressable
@@ -78,7 +78,7 @@ export default function ProfileScreen({ navigation }) {
             {loggingOut ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.logoutText}>Cerrar sesión</Text>
+              <Text style={styles.logoutText}>Sign out</Text>
             )}
           </Pressable>
         </View>

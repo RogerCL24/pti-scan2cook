@@ -25,23 +25,18 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.content}>
         {/* HEADER */}
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/scan2cook-logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>¡Bienvenido!</Text>
+          <Text style={styles.headerTitle}>Welcome!</Text>
         </View>
 
         {/* BOTONES */}
         <View style={styles.form}>
           <Button
-            title="Escanear Ticket"
+            title="Scan Receipt"
             onPress={() => navigation.navigate('Scan')}
             icon="camera-outline"
           />
           <Button
-            title="Ver Despensa"
+            title="View Pantry"
             onPress={() => navigation.navigate('Pantry')}
             icon="basket-outline"
           />
@@ -66,19 +61,17 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   header: {
-    alignItems: 'upper-left',
+    alignItems: 'flex-start',
     marginBottom: 40,
   },
-  logo: {
-    alignContent: 'left',
-    width: 70,
-    height: 70,
-  },
-  title: {
+  headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: Colors.brandPrimary,
     marginTop: 10,
     marginBottom: 8,
+  },
+  form: {
+    width: '100%',
   },
 });

@@ -26,8 +26,8 @@ export default function PantryScreen({ navigation }) {
       setProducts(data);
       lastLoadRef.current = Date.now();
     } catch (error) {
-      console.error('❌ Error cargando productos:', error);
-      Alert.alert('Error', 'No se pudieron cargar los productos');
+      console.error('❌ Error loading products:', error);
+      Alert.alert('Error', 'Could not load products');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -41,13 +41,13 @@ export default function PantryScreen({ navigation }) {
       const shouldLoad = !lastLoad || now - lastLoad > 30000;
 
       if (shouldLoad) {
-        console.log('🔄 Cargando productos (cache expirado)');
+        console.log('🔄 Loading products (cache expired)');
         loadProducts();
       } else {
         console.log(
-          '✅ Cache vigente (hace',
+          '✅ Cache valid (since',
           Math.floor((now - lastLoad) / 1000),
-          's)'
+          's ago)'
         );
       }
     }, [loadProducts])
@@ -55,24 +55,24 @@ export default function PantryScreen({ navigation }) {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    lastLoadRef.current = null; // Fuerza recarga
+    lastLoadRef.current = null; // Force reload
     loadProducts();
   }, [loadProducts]);
 
   const handleDelete = useCallback((product) => {
-    Alert.alert('Eliminar producto', `¿Eliminar "${product.name}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert('Delete product', `Delete "${product.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Eliminar',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteProduct(product.id);
             setProducts((prev) => prev.filter((p) => p.id !== product.id));
-            Alert.alert('Eliminado', 'Producto eliminado de la despensa');
+            Alert.alert('Deleted', 'Product removed from pantry');
           } catch (error) {
-            console.error('Error eliminando producto:', error);
-            Alert.alert('Error', 'No se pudo eliminar el producto');
+            console.error('Error deleting product:', error);
+            Alert.alert('Error', 'Could not delete product');
           }
         },
       },
@@ -126,20 +126,11 @@ export default function PantryScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons
-            name="basket-outline"
-            size={32}
-            color={Colors.brandPrimary}
-          />
-          <View>
-            <Text style={styles.title}>Mi Despensa</Text>
-            <Text style={styles.subtitle}>
-              {products.length} producto{products.length !== 1 ? 's' : ''}
-            </Text>
-          </View>
-        </View>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>My Pantry</Text>
+        <Text style={styles.headerSubtitle}>
+          {products.length} product{products.length !== 1 ? 's' : ''}
+        </Text>
       </View>
 
       {/* LISTA DE PRODUCTOS */}
@@ -157,9 +148,9 @@ export default function PantryScreen({ navigation }) {
               size={64}
               color={Colors.textSecondary}
             />
-            <Text style={styles.emptyText}>Tu despensa está vacía</Text>
+            <Text style={styles.emptyText}>Your pantry is empty</Text>
             <Text style={styles.emptySubtext}>
-              Escanea un ticket para añadir productos
+              Scan a receipt to add products
             </Text>
           </View>
         }
@@ -178,41 +169,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundPrimary,
-    paddingTop: 60,
   },
-  loadingContainer: {
+  center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.backgroundPrimary,
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
+  headerContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: Colors.backgroundSecondary,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: {
-    fontSize: 22,
+  headerTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: Colors.brandPrimary,
+    marginTop: 10,
+    marginBottom: 8,
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
-    marginTop: 2,
+    marginBottom: 8,
   },
   list: {
     padding: 16,
