@@ -55,8 +55,8 @@ function formatItemForList(p) {
   }
 
   if (q <= 0) return name;
-  if (q === 1) return `1 unidad de ${name}`;
-  return `${q} unidades de ${name}`;
+  if (q === 1) return `1 unit of ${name}`;
+  return `${q} units of ${name}`;
 }
 
 // Extrae cantidad y nombre limpio de un string tipo "3 cocacolas" o "cocacolas"
@@ -84,12 +84,29 @@ function buildListSpeech(items, offset) {
 
   return {
     text: hasMore
-      ? `Tienes: ${lista}. ¿Quieres que siga?`
-      : `Tienes: ${lista}. Eso es todo lo que hay en tu despensa.`,
+      ? `You have: ${lista}. Do you want me to continue?`
+      : `You have: ${lista}. That's everything in your pantry.`,
     nextOffset: end,
     hasMore
   };
 }
+
+function buildIngredientsFromProducts(items = []) {
+  // Coge el nombre del producto
+  const names = items
+    .map((p) => p.name)
+    .filter(Boolean)
+    .map((n) =>
+      n
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // remove accents
+        .trim()
+    );
+
+  return Array.from(new Set(names));
+}
+
 
 
 // lee slots en minúscula o mayúscula
@@ -115,8 +132,12 @@ router.post("/", async (req, res) => {
 
 
     if (type === "LaunchRequest") {
-      return res.json(say("Hola, soy Scan2Cook Assistant.En qué te puedo ayudar? " +
-      "Puedes decir: añade tres tomates, qué tengo en la despensa, elimina dos pepinos, vacía la despensa o dime una receta."));
+      return res.json(
+        say(
+          "Hi, I'm your Scan2Cook assistant. How can I help you? " +
+            "You can say: add three tomatoes, what do I have in my pantry, remove two cucumbers, clear the pantry, or suggest a recipe."
+        )
+      );
     }
 
     if (type === "IntentRequest" && intent === "AddProductIntent") {
@@ -141,7 +162,7 @@ router.post("/", async (req, res) => {
 
       if (!name) {
         return res.json(
-          say("No entendí qué producto quieres añadir. Di, por ejemplo: añade 3 pepinos.")
+          say("I didn't understand which product you want to add. For example, say: add 3 cucumbers.")
         );
       }
 
@@ -153,7 +174,7 @@ router.post("/", async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: ALEXA_USER_ID,
-          name,          // <<-- ya sin números delante
+          name,          // <<-- sin números delante
           quantity,      // <<-- número correcto
           category,
           expiration_date
@@ -164,26 +185,28 @@ router.post("/", async (req, res) => {
         const msg = await resp.text().catch(() => "");
         console.error("POST /products fallo:", resp.status, msg);
         return res.json(
-          say("No he podido guardar el producto ahora mismo. Inténtalo más tarde.")
+          say("I couldn't save the product right now. Please try again later.")
         );
       }
 
       const texto =
         quantity === 1
-          ? `He añadido 1 ${name} a tu despensa.`
-          : `He añadido ${quantity} ${name} a tu despensa.`;
+          ? `I've added 1 ${name} to your pantry.`
+          : `I've added ${quantity} ${name} to your pantry.`;
 
-      return res.json(say(`${texto} ¿Quieres hacer algo más con tu despensa?`));
+      return res.json(
+        say(`${texto} Would you like to do anything else with your pantry?`)
+      );
     } 
 
     // 2) Listar productos: "qué tengo", "qué hay en la despensa"
     if (type === "IntentRequest" && intent === "ListProductsIntent") {
       const items = await getProductsForAlexa();
       if (items === null) {
-        return res.json(say("No pude consultar tu despensa ahora mismo."));
+        return res.json(say("I couldn't access your pantry right now."));
       }
       if (items.length === 0) {
-        return res.json(say("Tu despensa está vacía."));
+        return res.json(say("Your pantry is empty."));
       }
       const { text, nextOffset, hasMore } = buildListSpeech(items, 0);
       const attrs = hasMore ? { offset: nextOffset } : {};
@@ -197,10 +220,10 @@ router.post("/", async (req, res) => {
       const items = await getProductsForAlexa();
 
       if (items === null) {
-        return res.json(say("No pude consultar tu despensa ahora mismo."));
+        return res.json(say("I couldn't access your pantry right now."));
       }
       if (items.length === 0) {
-        return res.json(say("Tu despensa está vacía."));
+        return res.json(say("Your pantry is empty."));
       }
 
       const { text, nextOffset, hasMore } = buildListSpeech(items, currentOffset);
@@ -228,7 +251,7 @@ router.post("/", async (req, res) => {
 
       if (!rawName) {
         return res.json(
-          say("No entendí qué producto quieres borrar. Di, por ejemplo: elimina los pepinos.")
+          say("I didn't understand which product you want to remove. For example, say: remove the cucumbers.")
         );
       }
 
@@ -238,7 +261,7 @@ router.post("/", async (req, res) => {
 
       const items = await getProductsForAlexa();
       if (!items || items.length === 0) {
-        return res.json(say("Tu despensa está vacía."));
+        return res.json(say("Your pantry is empty."));
       }
 
       const matches = items.filter((p) => {
@@ -247,7 +270,7 @@ router.post("/", async (req, res) => {
       });
 
       if (matches.length === 0) {
-        return res.json(say(`No he encontrado ${rawName} en tu despensa.`));
+        return res.json(say(`I couldn't find ${rawName} in your pantry.`));
       }
 
       // Por simplicidad: cogemos el más reciente (por ejemplo, id más alto)
@@ -256,14 +279,14 @@ router.post("/", async (req, res) => {
       const currentQty = target.quantity || 0;
 
       if (currentQty <= qtyRequested) {
-        // Si pide borrar igual o más de lo que hay → eliminamos el producto entero
+        // Si pide borrar igual o más de lo que hay -> eliminamos el producto entero
         console.log(`Deleting product id=${target.id} (qty ${currentQty} <= requested ${qtyRequested})`);
         await fetch(`http://localhost:3000/products/${target.id}`, {
           method: "DELETE",
         });
 
         return res.json(
-          say(`He borrado todas las unidades de ${target.name} de tu despensa.`)
+          say(`I've removed all units of ${target.name} from your pantry.`)
         );
       } else {
         // Todavía quedará algo: actualizamos cantidad
@@ -279,13 +302,13 @@ router.post("/", async (req, res) => {
         if (!respUpdate.ok) {
           const txt = await respUpdate.text().catch(() => "");
           console.error("PUT /products error", respUpdate.status, txt);
-          return res.json(say("No he podido actualizar ese producto ahora mismo."));
+          return res.json(say("I couldn't update that product right now."));
         }
 
         const texto =
           qtyRequested === 1
-            ? `He borrado 1 ${target.name}. Te quedan ${newQty}.`
-            : `He borrado ${qtyRequested} ${target.name}. Te quedan ${newQty}.`;
+            ? `I've removed 1 ${target.name}. You still have ${newQty} left.`
+            : `I've removed ${qtyRequested} ${target.name}. You still have ${newQty} left.`;
 
         return res.json(say(texto));
       }
@@ -296,7 +319,7 @@ router.post("/", async (req, res) => {
     if (type === "IntentRequest" && intent === "ClearDespensaIntent") {
       const items = await getProductsForAlexa();
       if (!items || items.length === 0) {
-        return res.json(say("Tu despensa ya está vacía."));
+        return res.json(say("Your pantry is already empty."));
       }
 
       // Borramos todos los productos de este usuario
@@ -306,7 +329,7 @@ router.post("/", async (req, res) => {
         )
       );
 
-      return res.json(say("He vaciado tu despensa por completo."));
+      return res.json(say("I have completely cleared your pantry."));
     }
 
         // Comprobar si tengo un producto: "¿tengo leche?", "me queda arroz?"
@@ -315,35 +338,121 @@ router.post("/", async (req, res) => {
       const nameSearch = normalize(rawName);
 
       if (!nameSearch) {
-        return res.json(say("No entendí qué producto quieres comprobar. Di, por ejemplo: ¿tengo leche?"));
+        return res.json(
+          say("I didn't understand which product you want to check. For example, say: do I have milk?")
+        );
       }
 
       const items = await getProductsForAlexa();
       if (!items || items.length === 0) {
-        return res.json(say("Tu despensa está vacía, no tienes nada aún."));
+        return res.json(say("Your pantry is empty, you don't have anything yet."));
       }
 
       const matches = items.filter(p => normalize(p.name).includes(nameSearch));
       if (matches.length === 0) {
-        return res.json(say(`No, no tienes ${rawName} en la despensa.`));
+        return res.json(say(`No, you don't have any ${rawName} in your pantry.`));
       }
 
       const totalQty = matches.reduce((acc, p) => acc + (p.quantity || 0), 0);
 
       if (totalQty <= 0) {
-        return res.json(say(`No, no te queda ${rawName}.`));
+        return res.json(say(`No, you don't have any ${rawName} left.`));
       }
 
       // Cogemos el nombre del primer match para contestar algo amigable
       const refName = matches[0].name;
       return res.json(
-        say(`Sí, tienes ${totalQty} de ${refName} en tu despensa.`)
+        say(`Yes, you have ${totalQty} ${refName} in your pantry.`)
       );
     }
 
+    if (type === "IntentRequest" && intent === "SuggestRecipeIntent") {
+      // 1) Obtener productos de la despensa de Alexa
+      const items = await getProductsForAlexa(); // <- adapt to your code
+
+      if (items === null) {
+        return res.json(
+          say("I couldn't access your pantry right now. Please try again in a moment.")
+        );
+      }
+
+      if (!items || items.length === 0) {
+        return res.json(
+          say(
+            "Your pantry is empty. First add some products, then ask me for a recipe again."
+          )
+        );
+      }
+
+      // 2) Transformar productos a lista de ingredientes
+      const ingredients = buildIngredientsFromProducts(items);
+
+      if (ingredients.length === 0) {
+        return res.json(
+          say(
+            "I couldn't recognize any valid ingredients in your pantry. Try adding some items again."
+          )
+        );
+      }
+
+      // 3) Llamar a tu propio backend: /recipes/suggest
+      const ingredientsParam = encodeURIComponent(ingredients.join(","));
+      const response = await fetch(
+        `http://localhost:3000/recipes/suggest?ingredients=${ingredientsParam}&number=3`
+        // change localhost:3000 to your real backend URL if needed
+      );
+
+      if (!response.ok) {
+        console.error("Error calling /recipes/suggest:", response.status);
+        return res.json(
+          say("Something went wrong while searching for recipes. Please try again later.")
+        );
+      }
+
+      const data = await response.json();
+      const recipes = data.recipes || data || [];
+
+      if (!Array.isArray(recipes) || recipes.length === 0) {
+        return res.json(
+          say(
+            "I couldn't find any interesting recipe with what you have. Try adding more items to your pantry."
+          )
+        );
+      }
+
+      // 4) Nos quedamos con la primera receta sugerida
+      const recipe = recipes[0];
+      const title = recipe.title || "a recipe";
+
+      const used = (recipe.usedIngredients || recipe.usedIngredients || [])
+        .map((i) => i.name)
+        .filter(Boolean)
+        .join(", ");
+
+      const missing = (recipe.missedIngredients || recipe.missedIngredients || [])
+        .map((i) => i.name)
+        .filter(Boolean)
+        .join(", ");
+
+      let speech = `With the ingredients in your pantry, I suggest the recipe: ${title}. `;
+
+      if (used) {
+        speech += `It uses ingredients like: ${used}. `;
+      }
+
+      if (missing) {
+        speech += `You would still need: ${missing}. `;
+      }
+
+      speech += "If you want, add the missing ingredients and ask me again for more ideas.";
+
+      return res.json(say(speech));
+    }
+
+
         // Usuario dice "no" -> cerrar sesión
     if (type === "IntentRequest" && intent === "AMAZON.NoIntent") {
-      return res.json(say("De acuerdo, hasta luego.", true)); // shouldEndSession = true
+      return res.json(say("Alright, see you later.", true)); // shouldEndSession = true
     }
 
     // Usuario dice "sí" después de "¿Algo más?"
@@ -351,7 +460,7 @@ router.post("/", async (req, res) => {
       // Podemos redirigir a una especie de menú
       return res.json(
         say(
-          "Vale. Puedes decir, por ejemplo: añade tres tomates; qué tengo en la despensa; o dime una receta."
+          "Okay. You can say, for example: add three tomatoes; what do I have in my pantry; or suggest a recipe."
         )
       );
     }
@@ -360,13 +469,19 @@ router.post("/", async (req, res) => {
       type === "IntentRequest" &&
       (intent === "AMAZON.StopIntent" || intent === "AMAZON.CancelIntent")
     ) {
-      return res.json(say("¡Hasta luego!", true));
+      return res.json(say("Goodbye!", true));
     }
 
-    return res.json(say("No te he entendido. Prueba a decir: añade 2 manzanas."));
+    return res.json(
+      say(
+        "Sorry, I didn't understand that. You can ask me for a recipe or to manage your pantry."
+      )
+    );
   } catch (e) {
     console.error("Alexa error:", e);
-    return res.status(200).json(say("Hubo un problema. Intenta de nuevo."));
+    return res
+      .status(200)
+      .json(say("Something went wrong while handling your request. Please try again."));
   }
 });
 

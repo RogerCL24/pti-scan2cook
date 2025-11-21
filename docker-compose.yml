@@ -18,6 +18,8 @@ services:
     container_name: scan2cook_backend
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/scan2cook
       - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json

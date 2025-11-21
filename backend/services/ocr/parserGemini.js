@@ -13,36 +13,88 @@ const model = vertex.getGenerativeModel({
 
 export async function parseWithGemini(rawText) {
   const prompt = `
-Analiza este ticket de supermercado y devuelve **solo** un JSON válido, sin ningún formato adicional como Markdown (sin \`\`\`json o \`\`\`). El JSON debe tener la siguiente estructura:
-[
-  { "name": string, "quantity": number|null, "category": string|null }
-]
-Incluye solo nombres de productos, sin precios, totales ni líneas de pago. Asegúrate de que el resultado sea un JSON puro y válido que pueda ser procesado por JSON.parse().
-Texto:
+Eres un asistente que lee tickets de supermercado escritos en ESPAÑOL
+y devuelve la lista de productos en un JSON válido.
+
+MUY IMPORTANTE:
+- Debes TRADUCIR el nombre del producto al INGLÉS en el campo "name".
+- Si quieres, puedes mantener el nombre original en español en "original_name".
+- Para cada producto, asigna una categoría según dónde se guarda en casa:
+  - "nevera"  → productos que van al frigorífico (lácteos, embutidos, frescos…)
+  - "despensa" → productos de armario (arroz, pasta, conservas, snacks…)
+  - "congelados" → productos que van al congelador.
+
+Devuelve **EXCLUSIVAMENTE** un JSON válido (sin texto adicional, sin explicaciones).
+El formato del JSON debe ser EXACTAMENTE el siguiente:
+
+{
+  "products": [
+    {
+      "name": "whole milk",
+      "original_name": "LECHE ENTERA",
+      "quantity": 1,
+      "category": "nevera"
+    }
+  ]
+}
+
+Reglas:
+- "name" SIEMPRE en inglés, pensado como ingrediente de receta (ej: "tomato sauce", "chicken breast").
+- "original_name" es opcional, pero si puedes inferirlo del ticket, ponlo (en español tal como viene o ligeramente limpio).
+- "quantity": número entero aproximado de unidades de cada producto (si no está claro, usa 1).
+- "category": SOLO uno de estos valores: "nevera", "despensa" o "congelados".
+- Ignora líneas que sean totales, formas de pago, IVA, descuentos, etc.
+
+A continuación tienes el texto bruto del ticket, entre las marcas <<<TICKET>>> y <<<END>>>:
+
+<<<TICKET>>>
 ${rawText}
+<<<END>>>
 `;
 
   try {
-    const result = await model.generateContent(prompt);
-    let text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    // Log the raw response for debugging
-    console.log("Raw Gemini response:", text);
-    
-    // Clean the response to remove Markdown or other non-JSON content
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
+    });
+
+    const candidates = result.response?.candidates || [];
+    if (!candidates.length) {
+      throw new Error("No candidates returned from Gemini");
+    }
+
+    // Unimos todos los trozos de texto de la primera candidata
+    let text =
+      candidates[0].content?.parts
+        ?.map((p) => p.text || "")
+        .join("")
+        .trim() || "";
+
+    // Limpiar posibles ```json ... ``` del modelo
     text = text
-      .replace(/```(?:json)?/g, "")    // Remove ``` or ```json fences
-      .replace(/^\s+|\s+$/g, "") // Trim whitespace at start and end
+      .replace(/```json/i, "")
+      .replace(/```/g, "")
       .trim();
-    
-    // Validate that we have a non-empty string
+
     if (!text) {
       throw new Error("Empty or invalid response from Gemini");
     }
 
-    // Parse the cleaned text as JSON
     const parsed = JSON.parse(text);
-    return parsed;
+
+    // Por comodidad, devolvemos siempre un array de productos
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    if (Array.isArray(parsed.products)) {
+      return parsed.products;
+    }
+
+    throw new Error("JSON sin campo 'products' válido");
   } catch (err) {
     console.error("❌ Error en Gemini parser:", err);
     return { error: "GEMINI_PARSE_FAILED", details: err.message };
