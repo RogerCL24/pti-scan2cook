@@ -1,47 +1,39 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginUser, registerUser } from '../services/auth';
-import { saveToken, getToken, removeToken } from '../utils/storage';
+import { getToken, saveToken, removeToken } from '../utils/storage';
 
-const AuthContext = createContext({});
+export const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Verificar si hay sesión guardada al iniciar
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const savedToken = await getToken();
-      if (savedToken) {
-        setToken(savedToken);
-        // Aquí podrías hacer una llamada para obtener datos del usuario
-        // Por ahora solo marcamos que hay sesión
-        setUser({ token: savedToken });
+    (async () => {
+      try {
+        const t = await getToken();
+        const u = await AsyncStorage.getItem('user');
+        if (t && u) {
+          setToken(t);
+          setUser(JSON.parse(u));
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error verificando auth:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+  }, []);
 
   const login = async (email, password) => {
     try {
-      const response = await loginUser(email, password);
-      const { token, user: userData } = response;
-
-      await saveToken(token);
-      setToken(token);
-      setUser(userData);
-
+      const resp = await loginUser(email, password);
+      await saveToken(resp.token);
+      await AsyncStorage.setItem('user', JSON.stringify(resp.user));
+      setToken(resp.token);
+      setUser(resp.user);
       return { success: true };
     } catch (error) {
-      console.error('Error en login:', error);
       return {
         success: false,
         error: error.data?.error || error.message || 'Error al iniciar sesión',
@@ -51,16 +43,20 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await registerUser(name, email, password);
-      const { token, user: userData } = response;
+      const resp = await registerUser(name, email, password);
+      const token = resp?.token;
+      const userData = resp?.user;
+
+      if (!token || !userData) {
+        return { success: false, error: 'Respuesta inválida del servidor' };
+      }
 
       await saveToken(token);
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
       setToken(token);
       setUser(userData);
-
       return { success: true };
     } catch (error) {
-      console.error('Error en registro:', error);
       return {
         success: false,
         error: error.data?.error || error.message || 'Error al registrarse',
@@ -70,6 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await removeToken();
+    await AsyncStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };
@@ -91,10 +88,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

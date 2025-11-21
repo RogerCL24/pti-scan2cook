@@ -6,11 +6,14 @@ const router = express.Router();
 
 /**
  * GET /products
- * Devuelve todos los productos del usuario
+ * Devuelve todos los productos del usuario autenticado
  */
-router.get("/", async (req, res) => {
+router.get("/", authGuard, async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM products ORDER BY id ASC");
+    const result = await pool.query(
+      "SELECT * FROM products WHERE user_id = $1 ORDER BY created_at DESC",
+      [req.userId]
+    );
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error al obtener productos:", err);
@@ -20,17 +23,21 @@ router.get("/", async (req, res) => {
 
 /**
  * POST /products
- * Crea un nuevo producto
+ * Crea un nuevo producto asociado al usuario autenticado
  */
-router.post("/", async (req, res) => {
-  const { user_id, name, quantity, category, expiration_date } = req.body;
+router.post("/", authGuard, async (req, res) => {
+  const { name, quantity, category } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: "MISSING_NAME" });
+  }
 
   try {
     const result = await pool.query(
-      `INSERT INTO products (user_id, name, quantity, category, expiration_date)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO products (user_id, name, quantity, category)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [user_id, name, quantity, category, expiration_date]
+      [req.userId, name, quantity || 1, category || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -41,12 +48,18 @@ router.post("/", async (req, res) => {
 
 /**
  * DELETE /products/:id
- * Elimina un producto por ID
+ * Elimina un producto del usuario autenticado
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authGuard, async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query("DELETE FROM products WHERE id = $1", [id]);
+    const result = await pool.query(
+      "DELETE FROM products WHERE id = $1 AND user_id = $2",
+      [id, req.userId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "PRODUCT_NOT_FOUND" });
+    }
     res.status(204).send();
   } catch (err) {
     console.error("❌ Error al eliminar producto:", err);
@@ -57,7 +70,6 @@ router.delete("/:id", async (req, res) => {
 /**
  * POST /products/import
  * Inserta múltiples productos asociados al usuario autenticado
- * Body: { products: [ { name, quantity, category, expiration_date, ticket_id? } ] }
  */
 router.post("/import", authGuard, async (req, res) => {
   const userId = req.userId;
@@ -74,16 +86,16 @@ router.post("/import", authGuard, async (req, res) => {
 
     for (const p of products) {
       const name = p.name || "";
-      const quantity = p.quantity && Number.isInteger(p.quantity) ? p.quantity : 1;
+      const quantity =
+        p.quantity && Number.isInteger(p.quantity) ? p.quantity : 1;
       const category = p.category || null;
-      const expiration_date = p.expiration_date || null;
       const ticket_id = p.ticket_id || null;
 
       const result = await client.query(
-        `INSERT INTO products (user_id, ticket_id, name, quantity, category, expiration_date)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO products (user_id, ticket_id, name, quantity, category)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [userId, ticket_id, name, quantity, category, expiration_date]
+        [userId, ticket_id, name, quantity, category]
       );
       inserted.push(result.rows[0]);
     }

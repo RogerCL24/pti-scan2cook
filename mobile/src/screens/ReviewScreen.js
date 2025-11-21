@@ -20,8 +20,8 @@ export default function ReviewScreen({ route, navigation }) {
 
   useEffect(() => {
     if (products.length === 0) {
-      Alert.alert('Sin productos', 'No hay productos para revisar', [
-        { text: 'Volver', onPress: () => navigation.goBack() },
+      Alert.alert('No products', 'There are no products to review', [
+        { text: 'Go back', onPress: () => navigation.goBack() },
       ]);
     }
   }, []);
@@ -44,12 +44,12 @@ export default function ReviewScreen({ route, navigation }) {
   // Eliminar producto
   const removeProduct = (index) => {
     Alert.alert(
-      'Eliminar producto',
-      '¿Estás seguro de que quieres eliminar este producto?',
+      'Remove product',
+      'Are you sure you want to remove this product?',
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: 'Remove',
           style: 'destructive',
           onPress: () => {
             const updated = products.filter((_, i) => i !== index);
@@ -67,37 +67,49 @@ export default function ReviewScreen({ route, navigation }) {
   // Guardar productos en el backend
   const saveProducts = async () => {
     if (products.length === 0) {
-      Alert.alert('Sin productos', 'No hay productos para guardar');
+      Alert.alert('No products', 'There are no products to save');
       return;
     }
 
     setLoading(true);
 
     try {
-      console.log('💾 Guardando productos en backend:', products);
+      console.log('💾 Saving products to backend:', products);
 
       await saveProductsToBackend(products);
 
-      console.log('✅ Productos guardados exitosamente');
+      console.log('✅ Products saved successfully');
 
       Alert.alert(
-        '¡Guardado!',
-        `Se guardaron ${products.length} producto${
+        'Saved!',
+        `${products.length} product${
           products.length !== 1 ? 's' : ''
-        } en tu despensa`,
+        } added to your pantry`,
         [
           {
-            text: 'Ver despensa',
+            text: 'View pantry',
             onPress: () => {
-              navigation.navigate('MainTabs', { screen: 'Pantry' });
+              // Reset navigation to Pantry tab - can't swipe back
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'MainTabs',
+                    state: {
+                      routes: [{ name: 'Pantry' }],
+                      index: 0,
+                    },
+                  },
+                ],
+              });
             },
           },
         ]
       );
     } catch (error) {
-      console.error('❌ Error guardando productos:', error);
+      console.error('❌ Error saving products:', error);
 
-      let errorMessage = 'Error al guardar productos';
+      let errorMessage = 'Error saving products';
 
       if (error.status) {
         errorMessage = error.data?.error || `HTTP ${error.status}`;
@@ -120,10 +132,9 @@ export default function ReviewScreen({ route, navigation }) {
           size={32}
           color={Colors.brandPrimary}
         />
-        <Text style={styles.title}>Revisar Productos</Text>
+        <Text style={styles.title}>Review Products</Text>
         <Text style={styles.subtitle}>
-          {products.length} producto{products.length !== 1 ? 's' : ''} detectado
-          {products.length !== 1 ? 's' : ''}
+          {products.length} product{products.length !== 1 ? 's' : ''} detected
         </Text>
       </View>
 
@@ -145,7 +156,7 @@ export default function ReviewScreen({ route, navigation }) {
                 style={styles.productNameInput}
                 value={product.name}
                 onChangeText={(text) => updateName(index, text)}
-                placeholder="Nombre del producto"
+                placeholder="Product name"
                 placeholderTextColor={Colors.textSecondary}
               />
               <Pressable onPress={() => removeProduct(index)}>
@@ -160,7 +171,7 @@ export default function ReviewScreen({ route, navigation }) {
             {/* Cantidad y categoría */}
             <View style={styles.productDetails}>
               <View style={styles.quantityContainer}>
-                <Text style={styles.label}>Cantidad:</Text>
+                <Text style={styles.label}>Quantity:</Text>
                 <View style={styles.quantityControls}>
                   <Pressable
                     style={styles.quantityButton}
@@ -204,7 +215,7 @@ export default function ReviewScreen({ route, navigation }) {
       {/* BOTONES DE ACCIÓN */}
       <View style={styles.actions}>
         <Button
-          title={`Guardar ${products.length} producto${
+          title={`Save ${products.length} product${
             products.length !== 1 ? 's' : ''
           }`}
           onPress={saveProducts}
@@ -215,7 +226,7 @@ export default function ReviewScreen({ route, navigation }) {
           style={styles.cancelButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
       </View>
     </View>
