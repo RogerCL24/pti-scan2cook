@@ -1,5 +1,5 @@
 // Encuentra tu IP local:
-// - Linux/Mac: ifconfig | grep "inet "
+// - Linux/Mac: hostname -I | awk '{print $1}'
 // - Windows: ipconfig
 // Busca algo como 192.168.X.X
 

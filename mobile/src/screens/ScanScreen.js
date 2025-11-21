@@ -19,7 +19,6 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 export default function ScanScreen({ navigation }) {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('gemini');
 
   // Tomar foto con la cámara
   const takePhoto = async () => {
@@ -27,8 +26,8 @@ export default function ScanScreen({ navigation }) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          'Permisos necesarios',
-          'Necesitamos acceso a la cámara para escanear tickets'
+          'Permissions required',
+          'We need camera access to scan receipts'
         );
         return;
       }
@@ -45,7 +44,7 @@ export default function ScanScreen({ navigation }) {
       }
     } catch (error) {
       console.error('❌ Camera error:', error);
-      Alert.alert('Error', 'No se pudo abrir la cámara');
+      Alert.alert('Error', 'Could not open camera');
     }
   };
 
@@ -56,8 +55,8 @@ export default function ScanScreen({ navigation }) {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          'Permisos necesarios',
-          'Necesitamos acceso a la galería para seleccionar imágenes'
+          'Permissions required',
+          'We need gallery access to select images'
         );
         return;
       }
@@ -74,8 +73,8 @@ export default function ScanScreen({ navigation }) {
 
         if (imageAsset.fileSize && imageAsset.fileSize > MAX_BYTES) {
           Alert.alert(
-            'Imagen muy grande',
-            'La imagen excede 8MB. Por favor selecciona una imagen más pequeña.'
+            'Image too large',
+            'Image exceeds 8MB. Please select a smaller image.'
           );
           return;
         }
@@ -84,23 +83,23 @@ export default function ScanScreen({ navigation }) {
       }
     } catch (error) {
       console.error('❌ Gallery error:', error);
-      Alert.alert('Error', 'No se pudo abrir la galería');
+      Alert.alert('Error', 'Could not open gallery');
     }
   };
 
-  // Escanear ticket con backend REAL
+  // Escanear ticket con backend (siempre usando Gemini AI)
   const onScan = async () => {
     if (!image) {
-      Alert.alert('Sin imagen', 'Sube una imagen primero');
+      Alert.alert('No image', 'Upload an image first');
       return;
     }
 
     setLoading(true);
 
     try {
-      console.log('📤 Iniciando escaneo con backend real');
+      console.log('📤 Starting scan with Gemini AI');
 
-      const response = await uploadImageToOcr(image.uri, mode);
+      const response = await uploadImageToOcr(image.uri, 'gemini');
       console.log('RAW OCR RESPONSE:', response);
       console.log('PRODUCTS:', response.products);
 
@@ -108,19 +107,22 @@ export default function ScanScreen({ navigation }) {
 
       if (products.length === 0) {
         Alert.alert(
-          'Sin productos',
-          'No se detectaron productos. Intenta con otra foto más clara.'
+          'No products',
+          'No products detected. Try with a clearer photo.'
         );
         setLoading(false);
         return;
       }
 
-      // Navegar a ReviewScreen con los productos
-      navigation.navigate('Review', { products });
+      // Reset navigation stack - can't swipe back
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Review', params: { products } }],
+      });
     } catch (error) {
       console.error('❌ OCR error:', error);
 
-      let errorMessage = 'Error procesando OCR';
+      let errorMessage = 'Error processing OCR';
 
       if (error.status) {
         errorMessage = error.data?.error || `HTTP ${error.status}`;
@@ -137,11 +139,10 @@ export default function ScanScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <Ionicons name="scan-outline" size={48} color={Colors.brandPrimary} />
-        <Text style={styles.title}>Escanear Ticket</Text>
-        <Text style={styles.subtitle}>
-          Toma una foto clara del ticket o selecciona una imagen de tu galería
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Scan Receipt</Text>
+        <Text style={styles.headerSubtitle}>
+          Take a clear photo or select from gallery
         </Text>
       </View>
 
@@ -159,59 +160,17 @@ export default function ScanScreen({ navigation }) {
         </View>
       )}
 
-      {/* SELECTOR DE MODO (cuando hay imagen) */}
-      {image && (
-        <View style={styles.modeContainer}>
-          <Text style={styles.label}>Método de detección:</Text>
-          <View style={styles.modeSelector}>
-            <Pressable
-              style={[
-                styles.modeButton,
-                mode === 'gemini' && styles.modeButtonActive,
-              ]}
-              onPress={() => setMode('gemini')}
-            >
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'gemini' && styles.modeButtonTextActive,
-                ]}
-              >
-                Gemini IA
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.modeButton,
-                mode === 'regex' && styles.modeButtonActive,
-              ]}
-              onPress={() => setMode('regex')}
-            >
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'regex' && styles.modeButtonTextActive,
-                ]}
-              >
-                Regex
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* BOTONES */}
       <View style={styles.buttonGroup}>
         {!image ? (
           <>
             <Button
-              title="Tomar Foto"
+              title="Take Photo"
               onPress={takePhoto}
               icon="camera-outline"
             />
             <Button
-              title="Desde Galería"
+              title="From Gallery"
               onPress={pickImage}
               variant="secondary"
               icon="images-outline"
@@ -220,7 +179,7 @@ export default function ScanScreen({ navigation }) {
         ) : (
           <>
             <Button
-              title="Escanear Ticket"
+              title="Scan Receipt"
               onPress={onScan}
               loading={loading}
               icon="scan-outline"
@@ -229,7 +188,7 @@ export default function ScanScreen({ navigation }) {
               style={styles.changeButton}
               onPress={() => setImage(null)}
             >
-              <Text style={styles.changeButtonText}>Cambiar imagen</Text>
+              <Text style={styles.changeButtonText}>Change image</Text>
             </Pressable>
           </>
         )}
@@ -244,27 +203,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.backgroundPrimary,
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
     paddingTop: 60,
+    paddingBottom: 20,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
+  headerContainer: {
+    marginBottom: 40,
   },
-  title: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: Colors.brandPrimary,
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 8,
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 20,
   },
   imageContainer: {
     position: 'relative',
@@ -287,40 +242,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-  },
-  modeContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  modeSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modeButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: Colors.backgroundSecondary,
-    backgroundColor: Colors.backgroundPrimary,
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    borderColor: Colors.brandPrimary,
-    backgroundColor: Colors.brandPrimary,
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  modeButtonTextActive: {
-    color: Colors.backgroundPrimary,
   },
   buttonGroup: {
     gap: 12,
