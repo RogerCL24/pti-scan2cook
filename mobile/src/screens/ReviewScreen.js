@@ -89,7 +89,19 @@ export default function ReviewScreen({ route, navigation }) {
           {
             text: 'View pantry',
             onPress: () => {
-              navigation.navigate('MainTabs', { screen: 'Pantry' });
+              // Reset navigation to Pantry tab - can't swipe back
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'MainTabs',
+                    state: {
+                      routes: [{ name: 'Pantry' }],
+                      index: 0,
+                    },
+                  },
+                ],
+              });
             },
           },
         ]

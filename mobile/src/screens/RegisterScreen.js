@@ -112,7 +112,7 @@ export default function RegisterScreen({ navigation }) {
           {/* HEADER */}
           <View style={styles.header}>
             <Image
-              source={require('../../assets/scan2cook-logo.png')}
+              source={require('../../assets/icon.png')}
               style={styles.logo}
               resizeMode="contain"
             />

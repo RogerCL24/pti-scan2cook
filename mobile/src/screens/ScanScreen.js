@@ -19,7 +19,6 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 export default function ScanScreen({ navigation }) {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('gemini');
 
   // Tomar foto con la cámara
   const takePhoto = async () => {
@@ -88,7 +87,7 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  // Escanear ticket con backend REAL
+  // Escanear ticket con backend (siempre usando Gemini AI)
   const onScan = async () => {
     if (!image) {
       Alert.alert('No image', 'Upload an image first');
@@ -98,9 +97,9 @@ export default function ScanScreen({ navigation }) {
     setLoading(true);
 
     try {
-      console.log('📤 Starting scan with real backend');
+      console.log('📤 Starting scan with Gemini AI');
 
-      const response = await uploadImageToOcr(image.uri, mode);
+      const response = await uploadImageToOcr(image.uri, 'gemini');
       console.log('RAW OCR RESPONSE:', response);
       console.log('PRODUCTS:', response.products);
 
@@ -115,8 +114,11 @@ export default function ScanScreen({ navigation }) {
         return;
       }
 
-      // Navegar a ReviewScreen con los productos
-      navigation.navigate('Review', { products });
+      // Reset navigation stack - can't swipe back
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Review', params: { products } }],
+      });
     } catch (error) {
       console.error('❌ OCR error:', error);
 
@@ -155,48 +157,6 @@ export default function ScanScreen({ navigation }) {
               color={Colors.systemError}
             />
           </Pressable>
-        </View>
-      )}
-
-      {/* SELECTOR DE MODO (cuando hay imagen) */}
-      {image && (
-        <View style={styles.modeContainer}>
-          <Text style={styles.label}>Detection method:</Text>
-          <View style={styles.modeSelector}>
-            <Pressable
-              style={[
-                styles.modeButton,
-                mode === 'gemini' && styles.modeButtonActive,
-              ]}
-              onPress={() => setMode('gemini')}
-            >
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'gemini' && styles.modeButtonTextActive,
-                ]}
-              >
-                Gemini AI
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.modeButton,
-                mode === 'regex' && styles.modeButtonActive,
-              ]}
-              onPress={() => setMode('regex')}
-            >
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'regex' && styles.modeButtonTextActive,
-                ]}
-              >
-                Regex
-              </Text>
-            </Pressable>
-          </View>
         </View>
       )}
 
@@ -282,40 +242,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-  },
-  modeContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  modeSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modeButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: Colors.backgroundSecondary,
-    backgroundColor: Colors.backgroundPrimary,
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    borderColor: Colors.brandPrimary,
-    backgroundColor: Colors.brandPrimary,
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  modeButtonTextActive: {
-    color: Colors.backgroundPrimary,
   },
   buttonGroup: {
     gap: 12,

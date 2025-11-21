@@ -27,10 +27,21 @@ export default function RecipesScreen({ navigation }) {
     setLoading(true);
     setSearched(true);
     try {
+      console.log('🔍 Searching for:', query);
       const data = await searchRecipes(query.trim());
-      setRecipes(data);
+      console.log('📦 Received data:', data);
+      console.log('📦 Data type:', typeof data);
+      console.log('📦 Is array:', Array.isArray(data));
+      console.log('📦 Data length:', data?.length);
+
+      // Handle different response formats
+      const recipesList = Array.isArray(data) ? data : data?.results || [];
+      console.log('📋 Recipes list:', recipesList);
+
+      setRecipes(recipesList);
     } catch (error) {
-      console.error('Error searching recipes:', error);
+      console.error('❌ Error searching recipes:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       Alert.alert('Error', 'Could not search recipes');
     } finally {
       setLoading(false);

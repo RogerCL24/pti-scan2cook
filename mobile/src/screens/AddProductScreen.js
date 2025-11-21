@@ -5,12 +5,11 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  Pressable,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import { createProduct } from '../services/products';
+import Button from '../components/Button';
 
 export default function AddProductScreen({ navigation }) {
   const [form, setForm] = useState({
@@ -44,126 +43,132 @@ export default function AddProductScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Add product</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* HEADER */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Add Product</Text>
+        <Text style={styles.headerSubtitle}>
+          Add a new product to your pantry
+        </Text>
+      </View>
 
-      <Text style={styles.label}>Name</Text>
-      <TextInput
-        style={styles.input}
-        value={form.name}
-        onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
-        placeholder="e.g. Whole milk"
-        autoCapitalize="sentences"
-      />
-
-      <View style={styles.row}>
-        <View style={styles.col}>
-          <Text style={styles.label}>Quantity</Text>
+      {/* FORM */}
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Name</Text>
           <TextInput
             style={styles.input}
-            value={form.quantity}
-            onChangeText={(t) =>
-              setForm((f) => ({ ...f, quantity: t.replace(/[^0-9]/g, '') }))
-            }
-            placeholder="1"
-            keyboardType="number-pad"
+            value={form.name}
+            onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
+            placeholder="e.g. Whole milk"
+            placeholderTextColor={Colors.textSecondary}
+            autoCapitalize="sentences"
           />
         </View>
-        <View style={styles.col}>
-          <Text style={styles.label}>Category</Text>
-          <TextInput
-            style={styles.input}
-            value={form.category}
-            onChangeText={(t) => setForm((f) => ({ ...f, category: t }))}
-            placeholder="Dairy, Grains..."
-            autoCapitalize="words"
-          />
+
+        <View style={styles.row}>
+          <View style={styles.col}>
+            <Text style={styles.label}>Quantity</Text>
+            <TextInput
+              style={styles.input}
+              value={form.quantity}
+              onChangeText={(t) =>
+                setForm((f) => ({ ...f, quantity: t.replace(/[^0-9]/g, '') }))
+              }
+              placeholder="1"
+              placeholderTextColor={Colors.textSecondary}
+              keyboardType="number-pad"
+            />
+          </View>
+          <View style={styles.col}>
+            <Text style={styles.label}>Category</Text>
+            <TextInput
+              style={styles.input}
+              value={form.category}
+              onChangeText={(t) => setForm((f) => ({ ...f, category: t }))}
+              placeholder="Dairy, Grains..."
+              placeholderTextColor={Colors.textSecondary}
+              autoCapitalize="words"
+            />
+          </View>
         </View>
       </View>
 
-      <View style={styles.actions}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={({ pressed }) => [
-            styles.btnOutline,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.btnOutlineText}>Cancel</Text>
-        </Pressable>
-        <Pressable
+      {/* ACTIONS */}
+      <View style={styles.buttonGroup}>
+        <Button
+          title="Save Product"
           onPress={onSave}
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.btnPrimary,
-            saving && styles.btnDisabled,
-            pressed && !saving && styles.pressed,
-          ]}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.btnPrimaryText}>Save</Text>
-          )}
-        </Pressable>
+          loading={saving}
+          icon="checkmark-circle-outline"
+        />
+        <Button
+          title="Cancel"
+          onPress={() => navigation.goBack()}
+          variant="secondary"
+          icon="close-outline"
+        />
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.backgroundPrimary,
+  },
   content: {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 24,
-    backgroundColor: Colors.backgroundPrimary,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 16,
+  headerContainer: {
+    marginBottom: 40,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: Colors.brandPrimary,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  form: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  inputGroup: {
+    gap: 8,
   },
   label: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-    marginTop: 10,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: Colors.backgroundSecondary,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
     color: Colors.textPrimary,
   },
-  row: { flexDirection: 'row', gap: 12 },
-  col: { flex: 1 },
-  actions: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 12,
-    marginTop: 20,
   },
-  btnPrimary: {
-    backgroundColor: Colors.brandPrimary,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 10,
+  col: {
+    flex: 1,
+    gap: 8,
   },
-  btnPrimaryText: { color: '#fff', fontWeight: '700' },
-  btnOutline: {
-    borderWidth: 1,
-    borderColor: Colors.backgroundSecondary,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+  buttonGroup: {
+    gap: 12,
   },
-  btnOutlineText: { color: Colors.textPrimary, fontWeight: '600' },
-  btnDisabled: { opacity: 0.7 },
-  pressed: { opacity: 0.85 },
 });

@@ -23,14 +23,49 @@ export default function RecipeDetailScreen({ route }) {
 
   const loadRecipe = async () => {
     try {
+      console.log('📖 Loading recipe ID:', recipeId);
       const data = await getRecipeById(recipeId);
-      setRecipe(data);
+      console.log('📦 Received data:', data);
+
+      const recipeData = data.recipe || data;
+      console.log('📋 Recipe data:', recipeData);
+
+      setRecipe(recipeData);
     } catch (error) {
-      console.error('Error loading recipe:', error);
+      console.error('❌ Error loading recipe:', error);
       Alert.alert('Error', 'Could not load recipe details');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Parse HTML instructions into structured steps
+  const parseHTMLInstructions = (htmlText) => {
+    if (!htmlText) return [];
+
+    // Split by <li> tags and clean
+    const items = htmlText
+      .split(/<\/?li>/gi)
+      .map((step) => step.replace(/<[^>]*>/g, '').trim())
+      .filter((step) => step.length > 0);
+
+    // Separate headers from steps and assign proper step numbers
+    let stepCounter = 0;
+    return items.map((item) => {
+      // Check if this is a section header
+      const isHeader =
+        (/^To prepare|^For the/i.test(item) && item.endsWith(':')) ||
+        (/^To prepare|^For the/i.test(item) &&
+          item.length < 50 &&
+          !item.includes('.'));
+
+      if (isHeader) {
+        return { type: 'header', text: item.replace(':', '') };
+      } else {
+        stepCounter++;
+        return { type: 'step', number: stepCounter, text: item };
+      }
+    });
   };
 
   if (loading) {
@@ -53,6 +88,19 @@ export default function RecipeDetailScreen({ route }) {
       </View>
     );
   }
+
+  // Determine which instructions to use
+  const hasAnalyzedInstructions =
+    recipe.analyzedInstructions &&
+    recipe.analyzedInstructions.length > 0 &&
+    recipe.analyzedInstructions.some(
+      (section) => section.steps && section.steps.length > 0
+    );
+
+  const hasStringInstructions =
+    recipe.instructions &&
+    typeof recipe.instructions === 'string' &&
+    recipe.instructions.trim() !== '';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -126,29 +174,69 @@ export default function RecipeDetailScreen({ route }) {
         </View>
       )}
 
-      {/* INSTRUCTIONS */}
-      {recipe.analyzedInstructions &&
-        recipe.analyzedInstructions.length > 0 &&
-        recipe.analyzedInstructions[0].steps && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Instructions</Text>
-            {recipe.analyzedInstructions[0].steps.map((step, index) => (
-              <View key={index} style={styles.step}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{step.number}</Text>
-                </View>
-                <Text style={styles.stepText}>{step.step}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+      {/* INSTRUCTIONS - Use string format if available (cleaner) */}
+      {hasStringInstructions ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Instructions</Text>
+          {parseHTMLInstructions(recipe.instructions).map((item, index) => {
+            if (item.type === 'header') {
+              return (
+                <Text key={`header-${index}`} style={styles.subsectionTitle}>
+                  {item.text}
+                </Text>
+              );
+            }
 
-      {/* SUMMARY (HTML removed) */}
+            return (
+              <View key={`step-${index}`} style={styles.step}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>{item.number}</Text>
+                </View>
+                <Text style={styles.stepText}>{item.text}</Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : hasAnalyzedInstructions ? (
+        /* INSTRUCTIONS - Fallback to analyzed format */
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Instructions</Text>
+          {recipe.analyzedInstructions.map((section, sectionIndex) => {
+            if (!section.steps || section.steps.length === 0) return null;
+
+            // Only show section name if it's reasonable (not malformed data)
+            const isValidHeader =
+              section.name &&
+              section.name.trim() !== '' &&
+              section.name.length < 50;
+
+            return (
+              <View key={sectionIndex}>
+                {isValidHeader && (
+                  <Text style={styles.subsectionTitle}>
+                    {section.name.replace(':', '')}
+                  </Text>
+                )}
+                {section.steps.map((step, stepIndex) => (
+                  <View key={stepIndex} style={styles.step}>
+                    <View style={styles.stepNumber}>
+                      <Text style={styles.stepNumberText}>{step.number}</Text>
+                    </View>
+                    <Text style={styles.stepText}>{step.step}</Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+
+      {/* DESCRIPTION */}
       {recipe.summary && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.summaryText}>
-            {recipe.summary.replace(/<[^>]*>/g, '')}
+            {recipe.summary.replace(/<[^>]*>/g, '').trim()}
           </Text>
         </View>
       )}
@@ -192,6 +280,13 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: 12,
   },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brandPrimary,
+    marginTop: 12,
+    marginBottom: 8,
+  },
   ingredient: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -204,7 +299,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     lineHeight: 20,
   },
-  step: { flexDirection: 'row', marginBottom: 16 },
+  step: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start' },
   stepNumber: {
     width: 32,
     height: 32,
@@ -213,6 +308,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    flexShrink: 0,
   },
   stepNumberText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   stepText: {
