@@ -22,6 +22,23 @@ router.get("/", authGuard, async (req, res) => {
 });
 
 /**
+ * GET /products/random
+ * Devuelve 4 productos aleatorios del usuario autenticado
+ */
+router.get("/random", authGuard, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT name FROM products WHERE user_id = $1 ORDER BY RANDOM() LIMIT 4",
+      [req.userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error al obtener productos aleatorios:", err);
+    res.status(500).json({ error: "DB_ERROR" });
+  }
+});
+
+/**
  * POST /products
  * Crea un nuevo producto asociado al usuario autenticado
  */
