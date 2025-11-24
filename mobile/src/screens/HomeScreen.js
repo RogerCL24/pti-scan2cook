@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
@@ -22,11 +23,12 @@ export default function HomeScreen({ navigation }) {
   const loadStats = async () => {
     try {
       const products = await getUserProducts();
-      const total = products.length;
-      const low = products.filter((p) => p.quantity <= 2).length;
-      setStats({ total, low });
-    } catch (error) {
-      console.error('Error loading stats:', error);
+      setStats({
+        total: products.length,
+        low: products.filter((p) => p.quantity <= 2).length,
+      });
+    } catch (e) {
+      console.warn('Stats load error:', e.message);
     }
   };
 
@@ -253,6 +255,15 @@ const styles = StyleSheet.create({
   },
   actionSubtitle: {
     fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  loadingSection: {
+    padding: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
     color: Colors.textSecondary,
   },
 });

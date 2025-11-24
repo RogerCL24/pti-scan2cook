@@ -2,9 +2,6 @@ import { API_BASE_URL } from '../constants/config';
 import { getToken } from './auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const CACHE_PREFIX = 'recipe_cache_';
-
 export const searchRecipes = async (query) => {
   const token = await getToken();
 
@@ -28,12 +25,12 @@ export const searchRecipes = async (query) => {
 export const getRecipeById = async (recipeId) => {
   try {
     // Check cache first
-    const cacheKey = `${CACHE_PREFIX}${recipeId}`;
+    const cacheKey = `recipe_cache_${recipeId}`;
     const cached = await AsyncStorage.getItem(cacheKey);
 
     if (cached) {
       const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_DURATION) {
+      if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
         console.log('📦 Using cached recipe:', recipeId);
         return data;
       }
