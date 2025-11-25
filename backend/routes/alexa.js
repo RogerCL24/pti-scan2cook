@@ -2,7 +2,6 @@ import { Router } from "express";
 import fetch from "node-fetch";
 
 const router = Router();
-const ALEXA_USER_ID = Number(process.env.ALEXA_USER_ID || 1);
 
 const say = (text, end = false, attrs = {}) => {
   const res = {
@@ -35,7 +34,7 @@ const guessCategory = (name="") => {
 const PAGE_SIZE = 5;
 
 async function getProductsForAlexa() {
-  const r = await fetch(`http://localhost:3000/products?user_id=${ALEXA_USER_ID}`);
+  const r = await fetch(`http://localhost:3000/products?skipAuth=alexa`);
   if (!r.ok) return null;
   const items = await r.json();
   if (!Array.isArray(items) || items.length === 0) return [];
@@ -167,17 +166,14 @@ router.post("/", async (req, res) => {
       }
 
       const category = guessCategory(name);
-      const expiration_date = null;
 
-      const resp = await fetch("http://localhost:3000/products", {
+      const resp = await fetch("http://localhost:3000/products?skipAuth=alexa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: ALEXA_USER_ID,
           name,          // <<-- sin números delante
           quantity,      // <<-- número correcto
           category,
-          expiration_date
         })
       });
 
@@ -281,7 +277,7 @@ router.post("/", async (req, res) => {
       if (currentQty <= qtyRequested) {
         // Si pide borrar igual o más de lo que hay -> eliminamos el producto entero
         console.log(`Deleting product id=${target.id} (qty ${currentQty} <= requested ${qtyRequested})`);
-        await fetch(`http://localhost:3000/products/${target.id}`, {
+        await fetch(`http://localhost:3000/products/${target.id}?skipAuth=alexa`, {
           method: "DELETE",
         });
 
@@ -293,7 +289,7 @@ router.post("/", async (req, res) => {
         const newQty = currentQty - qtyRequested;
         console.log(`Updating product id=${target.id} from ${currentQty} to ${newQty}`);
 
-        const respUpdate = await fetch(`http://localhost:3000/products/${target.id}`, {
+        const respUpdate = await fetch(`http://localhost:3000/products/${target.id}?skipAuth=alexa`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quantity: newQty }),
@@ -325,7 +321,7 @@ router.post("/", async (req, res) => {
       // Borramos todos los productos de este usuario
       await Promise.allSettled(
         items.map(p =>
-          fetch(`http://localhost:3000/products/${p.id}`, { method: "DELETE" })
+          fetch(`http://localhost:3000/products/${p.id}?skipAuth=alexa`, { method: "DELETE" })
         )
       );
 
