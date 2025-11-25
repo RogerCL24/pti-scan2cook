@@ -69,3 +69,6 @@ CREATE TABLE ingredients (
   product_name VARCHAR(100) NOT NULL,
   quantity VARCHAR(50)
 );
+
+
+

@@ -3,8 +3,9 @@ import cors from "cors";
 import morgan from "morgan";
 
 import ocrRouter from "./routes/ocr.js";
-import authRouter from "./routes/auth.js";   // lo añadirás después
-import productsRouter from "./routes/products.js"; // lo añadirás después
+import authRouter from "./routes/auth.js";
+import productsRouter from "./routes/products.js";
+import alexaRouter from "./routes/alexa.js";
 import recipesRouter from "./routes/recipes.js";
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(morgan("dev"));
 app.use("/ocr", ocrRouter);
 app.use("/auth", authRouter);
 app.use("/products", productsRouter);
+app.use("/alexa", alexaRouter);
 app.use("/recipes", recipesRouter);
 
 // Endpoint de prueba
