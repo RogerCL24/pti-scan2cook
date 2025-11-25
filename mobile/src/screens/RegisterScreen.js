@@ -84,8 +84,10 @@ export default function RegisterScreen({ navigation }) {
           {
             text: 'Continue',
             onPress: () => {
-              console.log('👉 Navegando a MainTabs');
-              navigation.replace('MainTabs');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+              });
             },
           },
         ]);

@@ -36,7 +36,10 @@ export default function AppNavigator() {
         <Stack.Screen
           name="MainTabs"
           component={BottomTabs}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
         />
         <Stack.Screen
           name="Review"

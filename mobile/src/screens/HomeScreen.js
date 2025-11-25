@@ -53,8 +53,7 @@ export default function HomeScreen({ navigation }) {
       {/* HEADER */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.userName}>{firstName}</Text>
+          <Text style={styles.headerTitle}>Welcome {firstName}!</Text>
         </View>
         <Pressable
           style={styles.profileButton}
@@ -170,16 +169,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  greeting: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  userName: {
-    fontSize: 28,
+  headerTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: Colors.brandPrimary,
-    marginTop: 4,
+    marginTop: 10,
+    marginBottom: 8,
   },
   profileButton: {
     padding: 4,
