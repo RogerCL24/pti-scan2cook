@@ -53,7 +53,7 @@ export default function HomeScreen({ navigation }) {
       {/* HEADER */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Welcome {firstName}!</Text>
+          <Text style={styles.headerTitle}>Hello, {firstName}!</Text>
         </View>
         <Pressable
           style={styles.profileButton}

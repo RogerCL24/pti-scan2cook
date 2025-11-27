@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Pressable, StyleSheet, Platform } from 'react-native';
+import { Pressable, StyleSheet, Platform, Image } from 'react-native';
 import { Colors } from '../constants/colors';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -25,7 +25,13 @@ export default function BottomTabs() {
           headerShown: false,
           tabBarActiveTintColor: Colors.brandPrimary,
           tabBarInactiveTintColor: '#9aa0a6',
-          tabBarStyle: { backgroundColor: Colors.backgroundPrimary },
+          tabBarStyle: {
+            backgroundColor: Colors.backgroundPrimary,
+            borderTopWidth: 1,
+            borderTopColor: Colors.backgroundSecondary,
+            height: Platform.OS === 'ios' ? 85 : 65,
+            paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          },
           tabBarIcon: ({ color, size }) => {
             const icons = {
               Home: 'home-outline',
@@ -71,7 +77,11 @@ export default function BottomTabs() {
         ]}
         onPress={handleAlexaPress}
       >
-        <Ionicons name="mic" size={28} color="#fff" />
+        <Image
+          source={require('../../assets/alexa-icon.png')}
+          style={styles.alexaIcon}
+          resizeMode="contain"
+        />
       </Pressable>
     </>
   );
@@ -80,22 +90,27 @@ export default function BottomTabs() {
 const styles = StyleSheet.create({
   alexaButton: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 90 : 80,
+    bottom: Platform.OS === 'ios' ? 100 : 85,
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.brandSecondary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.brandPrimary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowRadius: 4,
   },
   alexaButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.95 }],
+    transform: [{ scale: 0.92 }],
+    elevation: 2,
+  },
+  alexaIcon: {
+    width: 30,
+    height: 30,
+    tintColor: '#fff',
   },
 });
