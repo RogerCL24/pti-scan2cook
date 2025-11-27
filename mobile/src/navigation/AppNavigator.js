@@ -54,7 +54,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="RecipeDetail"
           component={RecipeDetailScreen}
-          options={{ title: 'Recipe Details' }}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

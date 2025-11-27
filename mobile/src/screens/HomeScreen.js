@@ -7,15 +7,19 @@ import {
   Pressable,
   RefreshControl,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { getUserProducts } from '../services/products';
+import { getRandomSuggestions, refreshSuggestions } from '../services/recipes';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const [stats, setStats] = useState({ total: 0, low: 0 });
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const firstName = user?.name?.split(' ')[0] || 'User';
@@ -32,13 +36,29 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const loadSuggestions = async (forceRefresh = false) => {
+    setLoadingSuggestions(true);
+    try {
+      const recipes = forceRefresh
+        ? await refreshSuggestions()
+        : await getRandomSuggestions();
+      setSuggestions(recipes);
+    } catch (e) {
+      console.warn('Suggestions load error:', e.message);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
   useEffect(() => {
     loadStats();
+    loadSuggestions(); // Uses cache if available
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadStats();
+    await loadSuggestions(true); // Force refresh on pull-down
     setRefreshing(false);
   };
 
@@ -83,6 +103,46 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.statValue}>{stats.low}</Text>
           <Text style={styles.statLabel}>Low stock items</Text>
         </View>
+      </View>
+
+      {/* SUGGESTED RECIPES */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Suggested for You</Text>
+          <Pressable onPress={() => loadSuggestions(true)}>
+            <Ionicons name="refresh" size={22} color={Colors.brandPrimary} />
+          </Pressable>
+        </View>
+
+        {loadingSuggestions ? (
+          <View style={styles.loadingSection}>
+            <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          </View>
+        ) : suggestions.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {suggestions.map((recipe) => (
+              <Pressable
+                key={recipe.id}
+                style={styles.recipeCard}
+                onPress={() =>
+                  navigation.navigate('RecipeDetail', { recipeId: recipe.id })
+                }
+              >
+                <Image
+                  source={{ uri: recipe.image }}
+                  style={styles.recipeImage}
+                />
+                <View style={styles.recipeInfo}>
+                  <Text style={styles.recipeTitle} numberOfLines={2}>
+                    {recipe.title}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.emptyText}>No suggestions available</Text>
+        )}
       </View>
 
       {/* QUICK ACTIONS */}
@@ -181,8 +241,8 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 12,
     marginBottom: 32,
+    justifyContent: 'space-between',
   },
   statCard: {
     flex: 1,
@@ -195,6 +255,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    marginHorizontal: 6,
   },
   statValue: {
     fontSize: 32,
@@ -211,6 +272,12 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -220,7 +287,7 @@ const styles = StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
   },
   actionCard: {
     width: '48%',
@@ -255,10 +322,35 @@ const styles = StyleSheet.create({
   loadingSection: {
     padding: 40,
     alignItems: 'center',
-    gap: 12,
   },
-  loadingText: {
+  recipeCard: {
+    width: 160,
+    marginRight: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  recipeImage: {
+    width: '100%',
+    height: 120,
+  },
+  recipeInfo: {
+    padding: 12,
+  },
+  recipeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  emptyText: {
     fontSize: 14,
     color: Colors.textSecondary,
+    textAlign: 'center',
+    padding: 20,
   },
 });
