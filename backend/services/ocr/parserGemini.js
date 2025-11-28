@@ -20,9 +20,9 @@ MUY IMPORTANTE:
 - Debes TRADUCIR el nombre del producto al INGLÉS en el campo "name".
 - Si quieres, puedes mantener el nombre original en español en "original_name".
 - Para cada producto, asigna una categoría según dónde se guarda en casa:
-  - "nevera"  → productos que van al frigorífico (lácteos, embutidos, frescos…)
-  - "despensa" → productos de armario (arroz, pasta, conservas, snacks…)
-  - "congelados" → productos que van al congelador.
+  - "fridge"  → productos que van al frigorífico (lácteos, embutidos, frescos…)
+  - "pantry" → productos de armario (arroz, pasta, conservas, snacks…)
+  - "freezer" → productos que van al congelador.
 
 Devuelve **EXCLUSIVAMENTE** un JSON válido (sin texto adicional, sin explicaciones).
 El formato del JSON debe ser EXACTAMENTE el siguiente:
@@ -33,7 +33,7 @@ El formato del JSON debe ser EXACTAMENTE el siguiente:
       "name": "whole milk",
       "original_name": "LECHE ENTERA",
       "quantity": 1,
-      "category": "nevera"
+      "category": "fridge"
     }
   ]
 }
@@ -42,7 +42,7 @@ Reglas:
 - "name" SIEMPRE en inglés, pensado como ingrediente de receta (ej: "tomato sauce", "chicken breast").
 - "original_name" es opcional, pero si puedes inferirlo del ticket, ponlo (en español tal como viene o ligeramente limpio).
 - "quantity": número entero aproximado de unidades de cada producto (si no está claro, usa 1).
-- "category": SOLO uno de estos valores: "nevera", "despensa" o "congelados".
+- "category": SOLO uno de estos valores: "fridge", "pantry" o "freezer".
 - Ignora líneas que sean totales, formas de pago, IVA, descuentos, etc.
 
 A continuación tienes el texto bruto del ticket, entre las marcas <<<TICKET>>> y <<<END>>>:

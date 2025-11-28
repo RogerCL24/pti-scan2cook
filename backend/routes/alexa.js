@@ -21,14 +21,40 @@ const say = (text, end = false, attrs = {}) => {
 };
 
 
-const guessCategory = (name="") => {
+const guessCategory = (name = "") => {
   const n = name.toLowerCase();
-  if (/(leche|yogur|queso)/.test(n)) return "lacteos";
-  if (/(manzana|plátano|platano|tomate|lechuga|zanahoria)/.test(n)) return "fruta_verdura";
-  if (/(arroz|pasta|harina|aceite|sal|azúcar|azucar)/.test(n)) return "despensa";
-  if (/(agua|coca|cerveza|zumo)/.test(n)) return "bebidas";
-  return null;
+
+  // ❄️ FREEZER
+  if (
+    /(frozen|congelado|congelados|ice cream|helado|helados|peas|frozen pizza|nuggets|fish sticks|verduras congeladas)/.test(
+      n
+    )
+  ) {
+    return "freezer";
+  }
+
+  // 🧊 FRIDGE
+  if (
+    /(milk|leche|yogur|yogurt|cheese|queso|jamón|ham|turkey|pavo|butter|mantequilla|eggs|huevo|huevos|fresh juice|zumo fresco)/.test(
+      n
+    )
+  ) {
+    return "fridge";
+  }
+
+  // 🥫 PANTRY (por defecto casi todo lo demás no frío)
+  if (
+    /(rice|arroz|pasta|flour|harina|oil|aceite|salt|sal|sugar|azúcar|azucar|cereal|beans|lentejas|lentils|garbanzos|chickpeas|tomato sauce|salsa de tomate|canned|enlatado|galletas|cookies|crackers|bread|pan)/.test(
+      n
+    )
+  ) {
+    return "pantry";
+  }
+
+  // Si no sabemos, mejor pantry como fallback
+  return "pantry";
 };
+
 
 
 const PAGE_SIZE = 5;
@@ -71,6 +97,16 @@ function extractQtyAndName(raw, defaultQty = 1) {
   return { qty: defaultQty, name: trimmed };
 }
 
+// Divide una frase tipo "3 tomatoes, pasta and milk" en ["3 tomatoes", "pasta", "milk"]
+function splitProducts(raw) {
+  if (!raw) return [];
+
+  return raw
+    .replace(/\s+(y|and)\s+/gi, ",") // "tomatoes and pasta" / "tomates y pasta" -> con coma
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 
 
 function buildListSpeech(items, offset) {
@@ -107,7 +143,6 @@ function buildIngredientsFromProducts(items = []) {
 }
 
 
-
 // lee slots en minúscula o mayúscula
 const getSlotValue = (slots, key) =>
   slots?.[key]?.value ??
@@ -120,6 +155,44 @@ const normalize = (s = "") =>
     .normalize("NFD")                 // quita acentos
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+
+function summarizeRecipe(recipe) {
+  const title = recipe.title || "a recipe";
+
+  const used = (recipe.usedIngredients || [])
+    .map((i) => i.name)
+    .filter(Boolean)
+    .join(", ");
+
+  const missing = (recipe.missedIngredients || [])
+    .map((i) => i.name)
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    id: recipe.id,
+    title,
+    used,
+    missing,
+  };
+}
+
+function recipeSummaryToSpeech(summary) {
+  let speech = `With the ingredients in your pantry, I suggest the recipe: ${summary.title}. `;
+
+  if (summary.used) {
+    speech += `It uses ingredients like: ${summary.used}. `;
+  }
+
+  if (summary.missing) {
+    speech += `You would still need: ${summary.missing}. `;
+  }
+
+  speech +=
+    "If you like this recipe, you can say: read me the instructions. Or you can say: suggest another recipe.";
+
+  return speech;
+}
 
 
 router.post("/", async (req, res) => {
@@ -134,7 +207,7 @@ router.post("/", async (req, res) => {
       return res.json(
         say(
           "Hi, I'm your Scan2Cook assistant. How can I help you? " +
-            "You can say: add three tomatoes, what do I have in my pantry, remove two cucumbers, clear the pantry, or suggest a recipe."
+            "You can say for example: add three tomatoes, what do I have in my pantry, remove two cucumbers, clear the pantry, or suggest a recipe."
         )
       );
     }
@@ -143,57 +216,124 @@ router.post("/", async (req, res) => {
       console.log("SLOTS AddProduct:", JSON.stringify(slots, null, 2));
 
       const rawProduct = (getSlotValue(slots, "producto") || "").trim();
-      let quantitySlot = getSlotValue(slots, "cantidad");
+      const quantitySlot = getSlotValue(slots, "cantidad");
 
-      let quantity = Number(quantitySlot);
-      let name = rawProduct;
+      // Separar en varios productos si el usuario dice "milk, eggs and pasta"
+      const parts = splitProducts(rawProduct);
 
-      // Si la cantidad del slot no es un número válido, intentamos sacarla del propio "producto"
-      if (!Number.isFinite(quantity) || quantity < 1) {
-        const { qty, name: cleaned } = extractQtyAndName(rawProduct, 1);
-        quantity = qty;
-        name = cleaned;
-      } else {
-        // Tenemos cantidad en su slot; por si acaso el nombre también viene con número delante, lo limpiamos
-        const { name: cleaned } = extractQtyAndName(rawProduct, quantity);
-        name = cleaned;
-      }
-
-      if (!name) {
+      if (parts.length === 0) {
         return res.json(
-          say("I didn't understand which product you want to add. For example, say: add 3 cucumbers.")
+          say(
+            "I didn't understand which product you want to add. For example, say: add 3 cucumbers."
+          )
         );
       }
 
-      const category = guessCategory(name);
+      //SOLO UN producto
+      if (parts.length === 1) {
+        let quantity = Number(quantitySlot);
+        let name = parts[0];
 
-      const resp = await fetch("http://localhost:3000/products?skipAuth=alexa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,          // <<-- sin números delante
-          quantity,      // <<-- número correcto
-          category,
-        })
-      });
+        if (!Number.isFinite(quantity) || quantity < 1) {
+          const { qty, name: cleaned } = extractQtyAndName(name, 1);
+          quantity = qty;
+          name = cleaned;
+        } else {
+          const { name: cleaned } = extractQtyAndName(name, quantity);
+          name = cleaned;
+        }
 
-      if (!resp.ok) {
-        const msg = await resp.text().catch(() => "");
-        console.error("POST /products fallo:", resp.status, msg);
+        if (!name) {
+          return res.json(
+            say(
+              "I didn't understand which product you want to add. For example, say: add 3 cucumbers."
+            )
+          );
+        }
+
+        const category = guessCategory(name);
+
+        const resp = await fetch(
+          "http://localhost:3000/products?skipAuth=alexa",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              quantity,
+              category,
+            }),
+          }
+        );
+
+        if (!resp.ok) {
+          const msg = await resp.text().catch(() => "");
+          console.error("POST /products error:", resp.status, msg);
+          return res.json(
+            say(
+              "I couldn't save the product right now. Please try again later."
+            )
+          );
+        }
+
+        const texto =
+          quantity === 1
+            ? `I've added 1 ${name} to your pantry.`
+            : `I've added ${quantity} ${name} to your pantry.`;
+
         return res.json(
-          say("I couldn't save the product right now. Please try again later.")
+          say(`${texto} Would you like to do anything else with your pantry?`)
         );
       }
 
-      const texto =
-        quantity === 1
-          ? `I've added 1 ${name} to your pantry.`
-          : `I've added ${quantity} ${name} to your pantry.`;
+      //VARIOS productos en la misma frase
+      let addedCount = 0;
+      const addedNames = [];
+
+      for (const part of parts) {
+        const { qty, name } = extractQtyAndName(part, 1);
+        if (!name) continue;
+
+        const category = guessCategory(name);
+
+        const resp = await fetch(
+          "http://localhost:3000/products?skipAuth=alexa",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              quantity: qty,
+              category,
+            }),
+          }
+        );
+
+        if (resp.ok) {
+          addedCount += 1;
+          addedNames.push(`${qty} ${name}`);
+        } else {
+          const msg = await resp.text().catch(() => "");
+          console.error("POST /products error (multi):", resp.status, msg);
+        }
+      }
+
+      if (addedCount === 0) {
+        return res.json(
+          say(
+            "I couldn't save any of the products you mentioned. Please try again."
+          )
+        );
+      }
+
+      const listForSpeech = addedNames.join(", ");
+      const textoMulti = `I've added ${listForSpeech} to your pantry.`;
 
       return res.json(
-        say(`${texto} Would you like to do anything else with your pantry?`)
+        say(`${textoMulti} Would you like to do anything else with your pantry?`)
       );
-    } 
+    }
+
 
     // 2) Listar productos: "qué tengo", "qué hay en la despensa"
     if (type === "IntentRequest" && intent === "ListProductsIntent") {
@@ -363,46 +503,33 @@ router.post("/", async (req, res) => {
     }
 
     if (type === "IntentRequest" && intent === "SuggestRecipeIntent") {
-      // 1) Obtener productos de la despensa de Alexa
-      const items = await getProductsForAlexa(); // <- adapt to your code
+      const items = await getProductsForAlexa();
 
       if (items === null) {
-        return res.json(
-          say("I couldn't access your pantry right now. Please try again in a moment.")
-        );
+        return res.json(say("I couldn't access your pantry right now."));
       }
 
       if (!items || items.length === 0) {
         return res.json(
-          say(
-            "Your pantry is empty. First add some products, then ask me for a recipe again."
-          )
+          say("Your pantry is empty. Add some products and try again.")
         );
       }
 
-      // 2) Transformar productos a lista de ingredientes
       const ingredients = buildIngredientsFromProducts(items);
 
       if (ingredients.length === 0) {
         return res.json(
-          say(
-            "I couldn't recognize any valid ingredients in your pantry. Try adding some items again."
-          )
+          say("I couldn't recognize any usable ingredients in your pantry.")
         );
       }
 
-      // 3) Llamar a tu propio backend: /recipes/suggest
       const ingredientsParam = encodeURIComponent(ingredients.join(","));
       const response = await fetch(
         `http://localhost:3000/recipes/suggest?ingredients=${ingredientsParam}&number=3`
-        // change localhost:3000 to your real backend URL if needed
       );
 
       if (!response.ok) {
-        console.error("Error calling /recipes/suggest:", response.status);
-        return res.json(
-          say("Something went wrong while searching for recipes. Please try again later.")
-        );
+        return res.json(say("I couldn't search for recipes right now."));
       }
 
       const data = await response.json();
@@ -410,39 +537,103 @@ router.post("/", async (req, res) => {
 
       if (!Array.isArray(recipes) || recipes.length === 0) {
         return res.json(
+          say("I couldn't find any recipes with your current ingredients.")
+        );
+      }
+
+      // 🔥 NUEVO: Guardamos TODA la lista resumida
+      const summaries = recipes.map(summarizeRecipe);
+
+      // Primera receta (index = 0)
+      const currentIndex = 0;
+      const current = summaries[currentIndex];
+
+      const speech = recipeSummaryToSpeech(current);
+
+      const attrs = {
+        ...sessionAttrs,
+        recipeList: summaries,
+        recipeIndex: currentIndex,
+        lastRecipeId: current.id,
+        lastRecipeTitle: current.title,
+      };
+
+      return res.json(say(speech, false, attrs));
+    }
+
+    if (type === "IntentRequest" && intent === "NextRecipeIntent") {
+      const recipeList = sessionAttrs.recipeList;
+      let recipeIndex = sessionAttrs.recipeIndex;
+
+      if (!Array.isArray(recipeList) || recipeList.length === 0) {
+        return res.json(
+          say("I don't have more recipes stored. Ask me to suggest a recipe first.")
+        );
+      }
+
+      if (typeof recipeIndex !== "number") {
+        recipeIndex = 0;
+      }
+
+      const nextIndex = recipeIndex + 1;
+
+      if (nextIndex >= recipeList.length) {
+        return res.json(
           say(
-            "I couldn't find any interesting recipe with what you have. Try adding more items to your pantry."
+            "There are no more recipe options. Ask me again to suggest new recipes!"
           )
         );
       }
 
-      // 4) Nos quedamos con la primera receta sugerida
-      const recipe = recipes[0];
-      const title = recipe.title || "a recipe";
+      const nextRecipe = recipeList[nextIndex];
+      const speech = recipeSummaryToSpeech(nextRecipe);
 
-      const used = (recipe.usedIngredients || recipe.usedIngredients || [])
-        .map((i) => i.name)
-        .filter(Boolean)
-        .join(", ");
+      const attrs = {
+        ...sessionAttrs,
+        recipeList,
+        recipeIndex: nextIndex,
+        lastRecipeId: nextRecipe.id,
+        lastRecipeTitle: nextRecipe.title,
+      };
 
-      const missing = (recipe.missedIngredients || recipe.missedIngredients || [])
-        .map((i) => i.name)
-        .filter(Boolean)
-        .join(", ");
+      return res.json(say(speech, false, attrs));
+    }
 
-      let speech = `With the ingredients in your pantry, I suggest the recipe: ${title}. `;
+    if (type === "IntentRequest" && intent === "ReadRecipeInstructionsIntent") {
+      const recipeId = sessionAttrs.lastRecipeId;
+      const recipeTitle = sessionAttrs.lastRecipeTitle;
 
-      if (used) {
-        speech += `It uses ingredients like: ${used}. `;
+      if (!recipeId) {
+        return res.json(
+          say("I don't know which recipe you want. First ask me to suggest a recipe.")
+        );
       }
 
-      if (missing) {
-        speech += `You would still need: ${missing}. `;
+      // Llamamos a Spoonacular (o tu backend si lo encapsulas)
+      const r = await fetch(
+        `https://api.spoonacular.com/recipes/${recipeId}/analyzedInstructions?apiKey=${process.env.SPOONACULAR_API_KEY}`
+      );
+
+      if (!r.ok) {
+        return res.json(
+          say("I couldn't fetch the instructions for that recipe right now.")
+        );
       }
 
-      speech += "If you want, add the missing ingredients and ask me again for more ideas.";
+      const data = await r.json();
 
-      return res.json(say(speech));
+      if (!Array.isArray(data) || data.length === 0 || !data[0].steps) {
+        return res.json(
+          say(`I couldn't find step-by-step instructions for ${recipeTitle}.`)
+        );
+      }
+
+      const steps = data[0].steps;
+      const text = steps.map((s) => `Step ${s.number}: ${s.step}`).join(" ");
+
+      return res.json(
+        say(`Here are the instructions for ${recipeTitle}. ${text}`)
+      );
     }
 
 
