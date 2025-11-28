@@ -7,11 +7,11 @@ import {
   FlatList,
   Alert,
   Pressable,
-  RefreshControl,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
+import { getCategoryIcon } from '../constants/categoryIcons';
 import { getUserProducts, deleteProduct } from '../services/products';
 
 export default function PantryScreen({ navigation }) {
@@ -80,38 +80,42 @@ export default function PantryScreen({ navigation }) {
   }, []);
 
   const renderProduct = useCallback(
-    ({ item }) => (
-      <View style={styles.productCard}>
-        <View style={styles.productIcon}>
-          <Ionicons
-            name="nutrition-outline"
-            size={28}
-            color={Colors.brandSecondary}
-          />
-        </View>
+    ({ item }) => {
+      const iconName = getCategoryIcon(item.category);
 
-        <View style={styles.productInfo}>
-          <Text style={styles.productName}>{item.name}</Text>
-          <View style={styles.productMeta}>
-            <View style={styles.quantityBadge}>
-              <Text style={styles.quantityText}>x{item.quantity || 1}</Text>
-            </View>
-            {item.category && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category}</Text>
-              </View>
-            )}
+      return (
+        <View style={styles.productCard}>
+          <View style={styles.productIcon}>
+            <Ionicons name={iconName} size={28} color={Colors.brandSecondary} />
           </View>
-        </View>
 
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() => handleDelete(item)}
-        >
-          <Ionicons name="trash-outline" size={22} color={Colors.systemError} />
-        </Pressable>
-      </View>
-    ),
+          <View style={styles.productInfo}>
+            <Text style={styles.productName}>{item.name}</Text>
+            <View style={styles.productMeta}>
+              <View style={styles.quantityBadge}>
+                <Text style={styles.quantityText}>x{item.quantity || 1}</Text>
+              </View>
+              {item.category && (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{item.category}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <Pressable
+            style={styles.deleteButton}
+            onPress={() => handleDelete(item)}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={22}
+              color={Colors.systemError}
+            />
+          </Pressable>
+        </View>
+      );
+    },
     [handleDelete]
   );
 
@@ -125,12 +129,25 @@ export default function PantryScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {/* HEADER with Add Button */}
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>My Pantry</Text>
-        <Text style={styles.headerSubtitle}>
-          {products.length} product{products.length !== 1 ? 's' : ''}
-        </Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>My Pantry</Text>
+            <Text style={styles.headerSubtitle}>
+              {products.length} product{products.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && styles.addButtonPressed,
+            ]}
+            onPress={() => navigation.navigate('AddProduct')}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </Pressable>
+        </View>
       </View>
 
       {/* LISTA DE PRODUCTOS */}
@@ -155,12 +172,6 @@ export default function PantryScreen({ navigation }) {
           </View>
         }
       />
-      <Pressable
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => navigation.navigate('AddProduct')}
-      >
-        <Ionicons name="add" size={28} color="#fff" />
-      </Pressable>
     </View>
   );
 }
@@ -183,6 +194,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.backgroundSecondary,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -194,6 +210,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     marginBottom: 8,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.brandPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  addButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.95 }],
   },
   list: {
     padding: 16,
@@ -280,20 +313,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.brandPrimary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-  },
-  fabPressed: {
-    opacity: 0.7,
   },
 });

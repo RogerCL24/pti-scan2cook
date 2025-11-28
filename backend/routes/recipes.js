@@ -1,4 +1,6 @@
 import express from "express";
+import pool from "../lib/db.js";
+import { authGuard } from "../middlewares/authGuard.js";
 import {
   findRecipesByIngredients,
   getRecipeInformation,
@@ -30,6 +32,41 @@ router.get("/suggest", async (req, res) => {
     res.json({ success: true, recipes });
   } catch (err) {
     console.error("❌ Error en /recipes/suggest:", err);
+    res.status(500).json({ error: "SPOONACULAR_ERROR", details: err.message });
+  }
+});
+
+// ==========================================
+// GET /recipes/suggest/random
+// Sugiere 3 recetas escogiendo 4 productos aleatorios del usuario
+// Requiere autenticación (token)
+// ==========================================
+router.get("/suggest/random", authGuard, async (req, res) => {
+  try {
+    // Obtener 4 productos aleatorios llamando al endpoint /products/random
+    const host = req.get("host");
+    const url = `${req.protocol}://${host}/products/random`;
+
+    const productsRes = await fetch(url, {
+      headers: { Authorization: req.headers.authorization },
+    });
+
+    if (!productsRes.ok) {
+      throw new Error("No se pudieron obtener productos aleatorios");
+    }
+
+    const products = await productsRes.json();
+    const ingredients = products.map(p => (p.name || "").trim()).filter(n => n.length > 0);
+
+    if (ingredients.length === 0) {
+      return res.json({ success: true, recipes: [] });
+    }
+
+    // Llamar a Spoonacular con los ingredientes para obtener 3 recetas
+    const recipes = await findRecipesByIngredients(ingredients, 3);
+    res.json({ success: true, recipes });
+  } catch (err) {
+    console.error("❌ Error en /recipes/suggest/random:", err);
     res.status(500).json({ error: "SPOONACULAR_ERROR", details: err.message });
   }
 });
