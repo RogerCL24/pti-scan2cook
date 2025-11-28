@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,40 @@ import {
   Image,
   TextInput,
   Alert,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
-import { searchRecipes } from '../services/recipes';
+import {
+  searchRecipes,
+  getRandomSuggestions,
+  refreshSuggestions,
+} from '../services/recipes';
 
 export default function RecipesScreen({ navigation }) {
   const [recipes, setRecipes] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [query, setQuery] = useState('');
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    loadSuggestions();
+  }, []);
+
+  const loadSuggestions = async (forceRefresh = false) => {
+    setLoadingSuggestions(true);
+    try {
+      const data = forceRefresh
+        ? await refreshSuggestions()
+        : await getRandomSuggestions();
+      setSuggestions(data);
+    } catch (error) {
+      console.warn('❌ Error loading suggestions:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -30,18 +53,13 @@ export default function RecipesScreen({ navigation }) {
       console.log('🔍 Searching for:', query);
       const data = await searchRecipes(query.trim());
       console.log('📦 Received data:', data);
-      console.log('📦 Data type:', typeof data);
-      console.log('📦 Is array:', Array.isArray(data));
-      console.log('📦 Data length:', data?.length);
 
-      // Handle different response formats
       const recipesList = Array.isArray(data) ? data : data?.results || [];
       console.log('📋 Recipes list:', recipesList);
 
       setRecipes(recipesList);
     } catch (error) {
       console.error('❌ Error searching recipes:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       Alert.alert('Error', 'Could not search recipes');
     } finally {
       setLoading(false);
@@ -85,93 +103,158 @@ export default function RecipesScreen({ navigation }) {
     </Pressable>
   );
 
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.content}>
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Recipes</Text>
-          </View>
+  // Memoize the header to prevent re-renders
+  const ListHeader = useMemo(
+    () => (
+      <View>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Recipes</Text>
+        </View>
 
-          {/* SEARCH BAR */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
-              <Ionicons
-                name="search-outline"
-                size={20}
-                color={Colors.textSecondary}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search recipes..."
-                value={query}
-                onChangeText={setQuery}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-              />
-              {query.length > 0 && (
-                <Pressable onPress={() => setQuery('')}>
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color={Colors.textSecondary}
-                  />
-                </Pressable>
-              )}
-            </View>
+        {/* SEARCH BAR */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color={Colors.textSecondary}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search recipes..."
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <Pressable onPress={() => setQuery('')}>
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={Colors.textSecondary}
+                />
+              </Pressable>
+            )}
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.searchButton,
+              pressed && styles.searchButtonPressed,
+            ]}
+            onPress={handleSearch}
+          >
+            <Text style={styles.searchButtonText}>Search</Text>
+          </Pressable>
+        </View>
+
+        {/* SUGGESTIONS HEADER */}
+        {!searched && !loading && (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {suggestions.length > 0 ? 'Suggested for You' : 'No Suggestions'}
+            </Text>
+            {suggestions.length > 0 && (
+              <Pressable onPress={() => loadSuggestions(true)}>
+                <Ionicons
+                  name="refresh"
+                  size={22}
+                  color={Colors.brandPrimary}
+                />
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* SEARCH RESULTS HEADER */}
+        {searched && recipes.length > 0 && (
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsTitle}>
+              Found {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+            </Text>
             <Pressable
-              style={({ pressed }) => [
-                styles.searchButton,
-                pressed && styles.searchButtonPressed,
-              ]}
-              onPress={handleSearch}
+              onPress={() => {
+                setSearched(false);
+                setQuery('');
+                setRecipes([]);
+              }}
             >
-              <Text style={styles.searchButtonText}>Search</Text>
+              <Text style={styles.clearText}>Clear</Text>
             </Pressable>
           </View>
+        )}
+      </View>
+    ),
+    [query, searched, loading, suggestions.length, recipes.length]
+  );
 
-          {/* LOADING */}
-          {loading && (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={Colors.brandPrimary} />
-            </View>
-          )}
-
-          {/* EMPTY STATE */}
-          {!loading && recipes.length === 0 && (
-            <View style={styles.empty}>
-              <Ionicons
-                name={searched ? 'restaurant-outline' : 'search-outline'}
-                size={64}
-                color={Colors.textSecondary}
-              />
-              <Text style={styles.emptyText}>
-                {searched ? 'No recipes found' : 'Search for recipes'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {searched
-                  ? 'Try a different search term'
-                  : 'Enter ingredients or dish name'}
-              </Text>
-            </View>
-          )}
-
-          {/* RECIPE LIST */}
-          {!loading && recipes.length > 0 && (
-            <FlatList
-              data={recipes}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderRecipe}
-              contentContainerStyle={styles.list}
-              scrollEnabled={false}
-            />
-          )}
+  const renderEmpty = () => {
+    if (loading || loadingSuggestions) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.brandPrimary} />
         </View>
-      </ScrollView>
+      );
+    }
+
+    if (searched && recipes.length === 0) {
+      return (
+        <View style={styles.empty}>
+          <Ionicons
+            name="restaurant-outline"
+            size={64}
+            color={Colors.textSecondary}
+          />
+          <Text style={styles.emptyText}>No recipes found</Text>
+          <Text style={styles.emptySubtext}>Try a different search term</Text>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => {
+              setSearched(false);
+              setQuery('');
+              setRecipes([]);
+            }}
+          >
+            <Text style={styles.backButtonText}>Back to suggestions</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (!searched && suggestions.length === 0) {
+      return (
+        <View style={styles.empty}>
+          <Ionicons
+            name="restaurant-outline"
+            size={64}
+            color={Colors.textSecondary}
+          />
+          <Text style={styles.emptyText}>No suggestions available</Text>
+          <Text style={styles.emptySubtext}>
+            Add products to get recipe suggestions
+          </Text>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
+  // Show search results if searched, otherwise show suggestions
+  const displayData = searched ? recipes : suggestions;
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={displayData}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderRecipe}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      />
     </View>
   );
 }
@@ -181,29 +264,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.backgroundPrimary,
   },
-  scrollContainer: {
-    flexGrow: 1,
-  },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 20,
   },
   header: {
     alignItems: 'flex-start',
-    marginBottom: 40,
+    marginBottom: 24,
   },
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     color: Colors.brandPrimary,
     marginTop: 10,
-    marginBottom: 8,
   },
   searchContainer: {
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 24,
   },
   searchBar: {
@@ -213,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: 12,
-    gap: 8,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: Colors.backgroundSecondary,
   },
@@ -222,6 +300,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     paddingVertical: 10,
+    marginLeft: 8,
   },
   searchButton: {
     backgroundColor: Colors.brandPrimary,
@@ -236,13 +315,40 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  resultsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  clearText: {
+    fontSize: 14,
+    color: Colors.brandPrimary,
+    fontWeight: '600',
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 200,
+    paddingVertical: 40,
   },
-  list: { paddingBottom: 16 },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -273,14 +379,21 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: 4,
   },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: Colors.textSecondary },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginLeft: 4,
+  },
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    minHeight: 300,
+    paddingVertical: 60,
   },
   emptyText: {
     fontSize: 18,
@@ -293,5 +406,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
+  },
+  backButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: Colors.brandPrimary,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

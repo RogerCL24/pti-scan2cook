@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,41 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import Button from '../components/Button';
 import { uploadImageToOcr } from '../services/ocr';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB
+const HISTORY_KEY = 'scan_history_v1';
+
+const readHistory = async () => {
+  try {
+    const raw = await AsyncStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveHistoryEntry = async (entry) => {
+  try {
+    const current = await readHistory();
+    const next = [entry, ...current].slice(0, 10);
+    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  } catch (e) {
+    console.warn('History save error', e.message);
+  }
+};
 
 export default function ScanScreen({ navigation }) {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const h = await readHistory();
+      setHistory(h);
+    })();
+  }, []);
 
   // Tomar foto con la cámara
   const takePhoto = async () => {
@@ -93,18 +122,10 @@ export default function ScanScreen({ navigation }) {
       Alert.alert('No image', 'Upload an image first');
       return;
     }
-
     setLoading(true);
-
     try {
-      console.log('📤 Starting scan with Gemini AI');
-
       const response = await uploadImageToOcr(image.uri, 'gemini');
-      console.log('RAW OCR RESPONSE:', response);
-      console.log('PRODUCTS:', response.products);
-
       const products = response.products || [];
-
       if (products.length === 0) {
         Alert.alert(
           'No products',
@@ -114,22 +135,31 @@ export default function ScanScreen({ navigation }) {
         return;
       }
 
-      // Reset navigation stack - can't swipe back
+      // Guardar en historial antes de navegar
+      await saveHistoryEntry({
+        id: Date.now(),
+        ts: new Date().toISOString(),
+        image: image.uri,
+        count: products.length,
+        names: products
+          .slice(0, 4)
+          .map((p) => p.name)
+          .join(', '),
+      });
+      const updated = await readHistory();
+      setHistory(updated);
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Review', params: { products } }],
       });
     } catch (error) {
-      console.error('❌ OCR error:', error);
-
       let errorMessage = 'Error processing OCR';
-
       if (error.status) {
         errorMessage = error.data?.error || `HTTP ${error.status}`;
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
@@ -146,6 +176,45 @@ export default function ScanScreen({ navigation }) {
         </Text>
       </View>
 
+      {/* HISTORIAL */}
+      {history.length > 0 && !image && (
+        <View style={styles.historySection}>
+          <View style={styles.historyHeader}>
+            <Text style={styles.historyTitle}>Recent scans</Text>
+            <Pressable
+              onPress={async () => {
+                await AsyncStorage.removeItem(HISTORY_KEY);
+                setHistory([]);
+              }}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={Colors.systemError}
+              />
+            </Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {history.map((item) => (
+              <Pressable
+                key={item.id}
+                style={styles.historyItem}
+                onPress={() => setImage({ uri: item.image })}
+              >
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.historyImage}
+                />
+                <Text style={styles.historyCount}>{item.count} items</Text>
+                <Text numberOfLines={1} style={styles.historyNames}>
+                  {item.names}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* PREVISUALIZACIÓN DE IMAGEN */}
       {image && (
         <View style={styles.imageContainer}>
@@ -161,35 +230,92 @@ export default function ScanScreen({ navigation }) {
       )}
 
       {/* BOTONES */}
-      <View style={styles.buttonGroup}>
+      <View style={styles.buttonsContainer}>
         {!image ? (
-          <>
-            <Button
-              title="Take Photo"
+          <View style={styles.actionRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionButton,
+                styles.actionButtonPrimary,
+                pressed && styles.actionButtonPressed,
+              ]}
               onPress={takePhoto}
-              icon="camera-outline"
-            />
-            <Button
-              title="From Gallery"
+            >
+              <View style={[styles.iconWrapper, styles.iconWrapperPrimary]}>
+                <Ionicons name="camera-outline" size={22} color="#fff" />
+              </View>
+              <Text style={styles.actionButtonText}>Take Photo</Text>
+              <Text style={styles.actionSubText}>Use device camera</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionButton,
+                styles.actionButtonSecondary,
+                pressed && styles.actionButtonPressed,
+              ]}
               onPress={pickImage}
-              variant="secondary"
-              icon="images-outline"
-            />
-          </>
+            >
+              <View style={[styles.iconWrapper, styles.iconWrapperSecondary]}>
+                <Ionicons name="images-outline" size={22} color="#fff" />
+              </View>
+              <Text style={styles.actionButtonText}>From Gallery</Text>
+              <Text style={styles.actionSubText}>Choose an existing image</Text>
+            </Pressable>
+          </View>
         ) : (
           <>
-            <Button
-              title="Scan Receipt"
-              onPress={onScan}
-              loading={loading}
-              icon="scan-outline"
-            />
             <Pressable
-              style={styles.changeButton}
-              onPress={() => setImage(null)}
+              style={[
+                styles.primaryButton,
+                loading && styles.primaryButtonDisabled,
+              ]}
+              onPress={onScan}
+              disabled={loading}
             >
-              <Text style={styles.changeButtonText}>Change image</Text>
+              <Ionicons
+                name={loading ? 'hourglass-outline' : 'scan-outline'}
+                size={22}
+                color="#fff"
+              />
+              <Text style={styles.primaryButtonText}>
+                {loading ? 'Scanning...' : 'Scan Receipt'}
+              </Text>
             </Pressable>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  styles.secondaryButtonAlt,
+                  pressed && styles.secondaryButtonPressed,
+                ]}
+                onPress={() => setImage(null)}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={18}
+                  color={Colors.brandSecondary}
+                />
+                <Text style={styles.secondaryButtonText}>Change image</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  styles.secondaryButtonDanger,
+                  pressed && styles.secondaryButtonPressed,
+                ]}
+                onPress={() => {
+                  setImage(null);
+                  Alert.alert('Reset', 'Image cleared.');
+                }}
+              >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={Colors.systemError}
+                />
+                <Text style={styles.secondaryButtonText}>Remove</Text>
+              </Pressable>
+            </View>
           </>
         )}
       </View>
@@ -221,6 +347,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
   },
+  historySection: {
+    marginBottom: 24,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  historyItem: {
+    width: 120,
+    marginRight: 12,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: Colors.backgroundSecondary,
+  },
+  historyImage: {
+    width: '100%',
+    height: 70,
+    borderRadius: 8,
+    marginBottom: 6,
+    backgroundColor: Colors.backgroundSecondary,
+  },
+  historyCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.brandPrimary,
+  },
+  historyNames: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+  },
   imageContainer: {
     position: 'relative',
     marginBottom: 24,
@@ -243,17 +408,91 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
   },
-  buttonGroup: {
-    gap: 12,
-  },
-  changeButton: {
-    padding: 12,
-    alignItems: 'center',
+  buttonsContainer: {
     marginTop: 8,
+    marginBottom: 32,
+    gap: 16,
   },
-  changeButtonText: {
+  actionRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    gap: 6,
+  },
+  actionButtonPrimary: {
+    backgroundColor: '#fff',
+    borderColor: Colors.brandPrimary,
+  },
+  actionButtonSecondary: {
+    backgroundColor: '#fff',
+    borderColor: Colors.brandSecondary,
+  },
+  actionButtonPressed: {
+    opacity: 0.85,
+  },
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  iconWrapperPrimary: {
+    backgroundColor: Colors.brandPrimary,
+  },
+  iconWrapperSecondary: {
+    backgroundColor: Colors.brandSecondary,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  actionSubText: {
+    fontSize: 12,
     color: Colors.textSecondary,
-    fontSize: 14,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: Colors.brandPrimary,
+    paddingVertical: 16,
+    borderRadius: 48,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  primaryButtonDisabled: { opacity: 0.75 },
+  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  secondaryRow: { flexDirection: 'row', gap: 14 },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    borderRadius: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    backgroundColor: '#fff',
+  },
+  secondaryButtonAlt: {
+    borderColor: Colors.brandSecondary,
+  },
+  secondaryButtonDanger: {
+    borderColor: Colors.systemError,
+  },
+  secondaryButtonPressed: { opacity: 0.85 },
+  secondaryButtonText: {
+    fontSize: 13,
     fontWeight: '600',
+    color: Colors.textPrimary,
   },
 });

@@ -4,11 +4,11 @@ dotenv.config();
 
 const vertex = new VertexAI({
   project: process.env.GOOGLE_PROJECT_ID,
-  location: "us-central1"
+  location: "us-central1",
 });
 
 const model = vertex.getGenerativeModel({
-  model: "gemini-2.0-flash-lite"
+  model: "gemini-2.0-flash-lite",
 });
 
 export async function parseWithGemini(rawText) {
@@ -24,7 +24,8 @@ MUY IMPORTANTE:
   - "pantry" → productos de armario (arroz, pasta, conservas, snacks…)
   - "freezer" → productos que van al congelador.
 
-Devuelve **EXCLUSIVAMENTE** un JSON válido (sin texto adicional, sin explicaciones).
+Devuelve **EXCLUSIVAMENTE** un JSON válido (sin texto adicional, sin explicaciones, sin productos que no sean alimentos: bolsas de plástico o papel, productos de limpieza del hogar, higiene personal (champú, gel, maquinillas, etc.), productos de parafarmacia).
+Si el mismo producto aparece varias veces, agrúpalo y suma las cantidades, A MENOS que sean claramente de diferente tipo(por ejemplo, LECHE ENTERA O LECHE SIN LACTOSA).
 El formato del JSON debe ser EXACTAMENTE el siguiente:
 
 {

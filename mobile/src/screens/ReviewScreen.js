@@ -224,7 +224,21 @@ export default function ReviewScreen({ route, navigation }) {
         />
         <Pressable
           style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            // Reset to Scan tab - can't swipe back
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'MainTabs',
+                  state: {
+                    routes: [{ name: 'Scan' }],
+                    index: 2, // Scan is the 3rd tab (index 2)
+                  },
+                },
+              ],
+            });
+          }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>

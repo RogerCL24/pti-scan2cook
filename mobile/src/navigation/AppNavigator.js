@@ -36,7 +36,10 @@ export default function AppNavigator() {
         <Stack.Screen
           name="MainTabs"
           component={BottomTabs}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
         />
         <Stack.Screen
           name="Review"
@@ -51,7 +54,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="RecipeDetail"
           component={RecipeDetailScreen}
-          options={{ title: 'Recipe Details' }}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

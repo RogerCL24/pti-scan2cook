@@ -44,24 +44,15 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
-    setErrors({});
-
-    if (!validateForm()) {
-      return;
-    }
-
     setLoading(true);
-
     try {
-      const result = await login(email.trim(), password);
-
-      if (result.success) {
-        navigation.replace('MainTabs');
-      } else {
-        Alert.alert('Error', result.error || 'Could not sign in');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Could not connect to server');
+      await login(email.trim(), password);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Login failed');
     } finally {
       setLoading(false);
     }
