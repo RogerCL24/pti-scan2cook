@@ -24,7 +24,7 @@ const say = (text, end = false, attrs = {}) => {
 const guessCategory = (name = "") => {
   const n = name.toLowerCase();
 
-  // ❄️ FREEZER
+  //  FREEZER
   if (
     /(frozen|congelado|congelados|ice cream|helado|helados|peas|frozen pizza|nuggets|fish sticks|verduras congeladas)/.test(
       n
@@ -33,7 +33,7 @@ const guessCategory = (name = "") => {
     return "freezer";
   }
 
-  // 🧊 FRIDGE
+  //  FRIDGE
   if (
     /(milk|leche|yogur|yogurt|cheese|queso|jamón|ham|turkey|pavo|butter|mantequilla|eggs|huevo|huevos|fresh juice|zumo fresco)/.test(
       n
@@ -42,7 +42,7 @@ const guessCategory = (name = "") => {
     return "fridge";
   }
 
-  // 🥫 PANTRY (por defecto casi todo lo demás no frío)
+  // PANTRY (por defecto casi todo lo demás no frío)
   if (
     /(rice|arroz|pasta|flour|harina|oil|aceite|salt|sal|sugar|azúcar|azucar|cereal|beans|lentejas|lentils|garbanzos|chickpeas|tomato sauce|salsa de tomate|canned|enlatado|galletas|cookies|crackers|bread|pan)/.test(
       n
@@ -425,7 +425,7 @@ router.post("/", async (req, res) => {
           say(`I've removed all units of ${target.name} from your pantry.`)
         );
       } else {
-        // Todavía quedará algo: actualizamos cantidad
+        //  actualizamos cantidad
         const newQty = currentQty - qtyRequested;
         console.log(`Updating product id=${target.id} from ${currentQty} to ${newQty}`);
 
@@ -495,7 +495,7 @@ router.post("/", async (req, res) => {
         return res.json(say(`No, you don't have any ${rawName} left.`));
       }
 
-      // Cogemos el nombre del primer match para contestar algo amigable
+      // Cogemos el nombre del primer match
       const refName = matches[0].name;
       return res.json(
         say(`Yes, you have ${totalQty} ${refName} in your pantry.`)
@@ -541,7 +541,7 @@ router.post("/", async (req, res) => {
         );
       }
 
-      // 🔥 NUEVO: Guardamos TODA la lista resumida
+      // Guardamos TODA la lista resumida
       const summaries = recipes.map(summarizeRecipe);
 
       // Primera receta (index = 0)
@@ -609,7 +609,7 @@ router.post("/", async (req, res) => {
         );
       }
 
-      // Llamamos a Spoonacular (o tu backend si lo encapsulas)
+      // Llamamos a Spoonacular
       const r = await fetch(
         `https://api.spoonacular.com/recipes/${recipeId}/analyzedInstructions?apiKey=${process.env.SPOONACULAR_API_KEY}`
       );
