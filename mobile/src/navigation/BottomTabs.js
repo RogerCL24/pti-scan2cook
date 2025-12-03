@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Platform, Image } from 'react-native';
+import { Pressable, StyleSheet, Platform, Image, Linking, Alert } from 'react-native';
 import { Colors } from '../constants/colors';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -13,9 +13,20 @@ import ProfileScreen from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs() {
-  const handleAlexaPress = () => {
-    console.log('🎤 Alexa button pressed');
-    // TODO: Implement Alexa functionality
+  const handleAlexaPress = async () => {
+  const skillId = 'amzn1.ask.skill.b2b75995-aaa3-4dfd-80c5-83416db4b1e6'; // <-- PON AQUÍ TU SKILL ID REAL
+  const url = `https://alexa-skills.amazon.es/apis/custom/skills/${skillId}/launch`;
+
+  const supported = await Linking.canOpenURL(url);
+  if (supported) {
+    await Linking.openURL(url);
+  } else {
+    Alert.alert(
+      'No se puede abrir Alexa',
+      'Instala la app de Alexa o prueba desde un navegador.'
+    );
+  }
+
   };
 
   return (
