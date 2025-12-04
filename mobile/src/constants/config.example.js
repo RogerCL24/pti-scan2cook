@@ -3,7 +3,7 @@
 // - Windows: ipconfig
 // Busca algo como 192.168.X.X
 
-export const API_BASE_URL = 'http://192.168.1.133:3000';
+export const API_BASE_URL = 'http://YOUR_LOCAL_IP:3000';
 
 // Ejemplo:
 // export const API_BASE_URL = 'http://192.168.1.45:3000/api';
