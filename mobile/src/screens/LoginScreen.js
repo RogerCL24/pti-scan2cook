@@ -44,6 +44,8 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
+    if (!validateForm()) return;
+
     setLoading(true);
     try {
       await login(email.trim(), password);

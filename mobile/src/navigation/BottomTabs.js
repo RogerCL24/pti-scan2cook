@@ -1,7 +1,8 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Platform, Image, Linking, Alert } from 'react-native';
+import { Pressable, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../constants/colors';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -13,115 +14,133 @@ import ProfileScreen from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs() {
-  const handleAlexaPress = async () => {
-  const skillId = 'amzn1.ask.skill.b2b75995-aaa3-4dfd-80c5-83416db4b1e6'; // <-- PON AQUÍ TU SKILL ID REAL
-  const url = `https://alexa-skills.amazon.es/apis/custom/skills/${skillId}/launch`;
-
-  const supported = await Linking.canOpenURL(url);
-  if (supported) {
-    await Linking.openURL(url);
-  } else {
-    Alert.alert(
-      'No se puede abrir Alexa',
-      'Instala la app de Alexa o prueba desde un navegador.'
-    );
-  }
-
-  };
-
   return (
-    <>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: Colors.brandPrimary,
-          tabBarInactiveTintColor: '#9aa0a6',
-          tabBarStyle: {
-            backgroundColor: Colors.backgroundPrimary,
-            borderTopWidth: 1,
-            borderTopColor: Colors.backgroundSecondary,
-            height: Platform.OS === 'ios' ? 85 : 65,
-            paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-          },
-          tabBarIcon: ({ color, size }) => {
-            const icons = {
-              Home: 'home-outline',
-              Pantry: 'basket-outline',
-              Scan: 'camera-outline',
-              Recipes: 'book-outline',
-              Profile: 'person-outline',
-            };
-            return (
-              <Ionicons name={icons[route.name]} size={size} color={color} />
-            );
-          },
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen
-          name="Pantry"
-          component={PantryScreen}
-          options={{ title: 'Pantry' }}
-        />
-        <Tab.Screen
-          name="Scan"
-          component={ScanScreen}
-          options={{ title: 'Scan' }}
-        />
-        <Tab.Screen
-          name="Recipes"
-          component={RecipesScreen}
-          options={{ title: 'Recipes' }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ title: 'Profile' }}
-        />
-      </Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: Colors.brandPrimary,
+        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: Colors.backgroundPrimary,
+          borderTopWidth: 1,
+          borderTopColor: Colors.backgroundSecondary,
+          elevation: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          height: Platform.OS === 'ios' ? 88 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+          paddingTop: 12,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIcon: ({ focused, color }) => {
+          let iconName;
 
-      {/* Floating Alexa Button */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.alexaButton,
-          pressed && styles.alexaButtonPressed,
-        ]}
-        onPress={handleAlexaPress}
-      >
-        <Image
-          source={require('../../assets/alexa-icon.png')}
-          style={styles.alexaIcon}
-          resizeMode="contain"
-        />
-      </Pressable>
-    </>
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Pantry') {
+            iconName = focused ? 'cube' : 'cube-outline';
+          } else if (route.name === 'Scan') {
+            iconName = 'scan';
+          } else if (route.name === 'Recipes') {
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          // Special styling for Scan button (FAB)
+          if (route.name === 'Scan') {
+            return (
+              <View style={styles.scanButtonContainer}>
+                <View style={styles.scanButton}>
+                  <Ionicons name={iconName} size={24} color="#FFFFFF" />
+                </View>
+                <Text style={styles.scanLabel}>Scan</Text>
+              </View>
+            );
+          }
+
+          // Regular tab icons
+          return (
+            <View style={styles.iconContainer}>
+              <Ionicons
+                name={iconName}
+                size={24}
+                color={color}
+                style={focused && styles.activeIcon}
+              />
+            </View>
+          );
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen
+        name="Pantry"
+        component={PantryScreen}
+        options={{ tabBarLabel: 'Pantry' }}
+      />
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{
+          tabBarLabel: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesScreen}
+        options={{ tabBarLabel: 'Recipes' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Profile' }}
+      />
+    </Tab.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
-  alexaButton: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 100 : 85,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeIcon: {
+    transform: [{ scale: 1.1 }],
+  },
+  scanButtonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -32,
+  },
+  scanButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: Colors.brandPrimary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowColor: Colors.brandPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  alexaButtonPressed: {
-    transform: [{ scale: 0.92 }],
-    elevation: 2,
-  },
-  alexaIcon: {
-    width: 30,
-    height: 30,
-    tintColor: '#fff',
+  scanLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.brandPrimary,
+    marginTop: 6,
   },
 });

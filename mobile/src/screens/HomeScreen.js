@@ -8,12 +8,33 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { getUserProducts } from '../services/products';
 import { getRandomSuggestions, refreshSuggestions } from '../services/recipes';
+
+const CATEGORIES = [
+  {
+    id: 'Dairy',
+    label: 'Dairy',
+    icon: 'nutrition-outline',
+    color: Colors.brandPrimary,
+  },
+  { id: 'Fruits', label: 'Fruits', icon: 'leaf-outline', color: '#FF6B6B' },
+  {
+    id: 'Vegetables',
+    label: 'Veggies',
+    icon: 'leaf-outline',
+    color: '#51CF66',
+  },
+  { id: 'Meat', label: 'Meat', icon: 'fish-outline', color: '#FF8787' },
+  { id: 'Bakery', label: 'Bakery', icon: 'pizza-outline', color: '#FAB005' },
+  { id: 'Beverages', label: 'Drinks', icon: 'cafe-outline', color: '#4DABF7' },
+];
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -52,222 +73,425 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadStats();
-    loadSuggestions(); // Uses cache if available
+    loadSuggestions();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadStats();
-    await loadSuggestions(true); // Force refresh on pull-down
+    await loadSuggestions(true);
     setRefreshing(false);
   };
 
+  const handleAlexaPress = async () => {
+    const skillId = 'amzn1.ask.skill.b2b75995-aaa3-4dfd-80c5-83416db4b1e6';
+    const url = `https://alexa-skills.amazon.es/apis/custom/skills/${skillId}/launch`;
+
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(
+        'Cannot open Alexa',
+        'Install the Alexa app or try from a browser.'
+      );
+    }
+  };
+
+  const handleCategoryPress = (categoryId) => {
+    navigation.navigate('Pantry', { filterCategory: categoryId });
+  };
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View>
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HEADER */}
+        <View style={styles.header}>
           <Text style={styles.headerTitle}>Hello, {firstName}!</Text>
-        </View>
-        <Pressable
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <Ionicons
-            name="person-circle-outline"
-            size={40}
-            color={Colors.brandPrimary}
-          />
-        </Pressable>
-      </View>
-
-      {/* STATS CARDS */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Ionicons name="cube-outline" size={32} color={Colors.brandPrimary} />
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Products in pantry</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Ionicons
-            name="alert-circle-outline"
-            size={32}
-            color={Colors.systemWarning}
-          />
-          <Text style={styles.statValue}>{stats.low}</Text>
-          <Text style={styles.statLabel}>Low stock items</Text>
-        </View>
-      </View>
-
-      {/* SUGGESTED RECIPES */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Suggested for You</Text>
-          <Pressable onPress={() => loadSuggestions(true)}>
-            <Ionicons name="refresh" size={22} color={Colors.brandPrimary} />
+          <Pressable
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Ionicons
+              name="person-circle-outline"
+              size={36}
+              color={Colors.textSecondary}
+            />
           </Pressable>
         </View>
 
-        {loadingSuggestions ? (
-          <View style={styles.loadingSection}>
-            <ActivityIndicator size="large" color={Colors.brandPrimary} />
+        {/* ALEXA PILL BUTTON */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.alexaPill,
+            pressed && styles.alexaPillPressed,
+          ]}
+          onPress={handleAlexaPress}
+        >
+          <Image
+            source={require('../../assets/alexa-icon.png')}
+            style={styles.alexaPillIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.alexaPillText}>Ask Alexa</Text>
+        </Pressable>
+
+        {/* PANTRY SUMMARY CARD */}
+        <Pressable
+          style={styles.summaryCard}
+          onPress={() => navigation.navigate('Pantry')}
+        >
+          <View style={styles.summaryIconContainer}>
+            <Ionicons
+              name="cube-outline"
+              size={32}
+              color={Colors.brandSecondary}
+            />
           </View>
-        ) : suggestions.length > 0 ? (
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryValue}>{stats.total}</Text>
+            <Text style={styles.summaryLabel}>Products in your pantry</Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={Colors.textSecondary}
+          />
+        </Pressable>
+
+        {/* CATEGORY QUICK ACCESS */}
+        <View style={styles.categoriesSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {suggestions.map((recipe) => (
+            {CATEGORIES.map((category) => (
               <Pressable
-                key={recipe.id}
-                style={styles.recipeCard}
-                onPress={() =>
-                  navigation.navigate('RecipeDetail', { recipeId: recipe.id })
-                }
+                key={category.id}
+                style={styles.categoryItem}
+                onPress={() => handleCategoryPress(category.id)}
               >
-                <Image
-                  source={{ uri: recipe.image }}
-                  style={styles.recipeImage}
-                />
-                <View style={styles.recipeInfo}>
-                  <Text style={styles.recipeTitle} numberOfLines={2}>
-                    {recipe.title}
-                  </Text>
+                <View
+                  style={[
+                    styles.categoryIcon,
+                    { backgroundColor: `${category.color}15` },
+                  ]}
+                >
+                  <Ionicons
+                    name={category.icon}
+                    size={24}
+                    color={category.color}
+                  />
                 </View>
+                <Text style={styles.categoryLabel}>{category.label}</Text>
               </Pressable>
             ))}
           </ScrollView>
-        ) : (
-          <Text style={styles.emptyText}>No suggestions available</Text>
-        )}
-      </View>
+        </View>
 
-      {/* QUICK ACTIONS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsGrid}>
-          <Pressable
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('Scan')}
-          >
-            <View style={styles.actionIcon}>
-              <Ionicons
-                name="scan-outline"
-                size={28}
-                color={Colors.brandPrimary}
-              />
+        {/* SCAN BANNER */}
+        <Pressable
+          style={styles.scanBanner}
+          onPress={() => navigation.navigate('Scan')}
+        >
+          <View style={styles.scanIconCircle}>
+            <Ionicons name="camera" size={28} color="#fff" />
+          </View>
+          <View style={styles.scanTextContainer}>
+            <Text style={styles.scanTitle}>Scan Receipt</Text>
+            <Text style={styles.scanSubtitle}>Add products from a ticket</Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={Colors.brandPrimary}
+          />
+        </Pressable>
+
+        {/* READY TO COOK */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Ready to Cook</Text>
+            <Pressable onPress={() => navigation.navigate('Recipes')}>
+              <Text style={styles.sectionLink}>See all</Text>
+            </Pressable>
+          </View>
+
+          {loadingSuggestions ? (
+            <View style={styles.loadingSection}>
+              <ActivityIndicator size="large" color={Colors.brandPrimary} />
             </View>
-            <Text style={styles.actionTitle}>Scan Receipt</Text>
-            <Text style={styles.actionSubtitle}>Add items quickly</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('Pantry')}
-          >
-            <View style={styles.actionIcon}>
-              <Ionicons
-                name="list-outline"
-                size={28}
-                color={Colors.brandPrimary}
-              />
-            </View>
-            <Text style={styles.actionTitle}>View Pantry</Text>
-            <Text style={styles.actionSubtitle}>Manage products</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('Recipes')}
-          >
-            <View style={styles.actionIcon}>
+          ) : stats.total === 0 ? (
+            <View style={styles.emptyState}>
               <Ionicons
                 name="restaurant-outline"
-                size={28}
-                color={Colors.brandPrimary}
+                size={48}
+                color={Colors.textSecondary}
               />
+              <Text style={styles.emptyText}>
+                Add products to your pantry to get recipe suggestions
+              </Text>
             </View>
-            <Text style={styles.actionTitle}>Find Recipes</Text>
-            <Text style={styles.actionSubtitle}>Cook something</Text>
-          </Pressable>
+          ) : suggestions.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {suggestions.map((recipe) => {
+                const usedCount = recipe.usedIngredientCount || 0;
+                const missedCount = recipe.missedIngredientCount || 0;
+                const totalCount = usedCount + missedCount || 0;
 
-          <Pressable
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('AddProduct')}
-          >
-            <View style={styles.actionIcon}>
+                const matchPercentage =
+                  totalCount > 0
+                    ? Math.round((usedCount / totalCount) * 100)
+                    : 0;
+
+                const isFullMatch = matchPercentage >= 80;
+
+                return (
+                  <Pressable
+                    key={recipe.id}
+                    style={styles.recipeCard}
+                    onPress={() =>
+                      navigation.navigate('RecipeDetail', {
+                        recipeId: recipe.id,
+                      })
+                    }
+                  >
+                    {isFullMatch && (
+                      <View style={styles.matchBadge}>
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={14}
+                          color="#fff"
+                        />
+                        <Text style={styles.matchBadgeText}>
+                          {matchPercentage}% Match
+                        </Text>
+                      </View>
+                    )}
+                    <Image
+                      source={{ uri: recipe.image }}
+                      style={styles.recipeImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.recipeInfo}>
+                      <Text style={styles.recipeTitle} numberOfLines={2}>
+                        {recipe.title}
+                      </Text>
+
+                      <View style={styles.recipeMetaContainer}>
+                        <View style={styles.recipeMetaItem}>
+                          <Ionicons
+                            name="time-outline"
+                            size={14}
+                            color={Colors.textSecondary}
+                          />
+                          <Text style={styles.recipeMetaText}>
+                            {recipe.readyInMinutes
+                              ? `${recipe.readyInMinutes}m`
+                              : '30m'}
+                          </Text>
+                        </View>
+                        <View style={styles.recipeMetaItem}>
+                          <Ionicons
+                            name="people-outline"
+                            size={14}
+                            color={Colors.textSecondary}
+                          />
+                          <Text style={styles.recipeMetaText}>
+                            {recipe.servings ? `${recipe.servings}` : '2'}
+                          </Text>
+                        </View>
+                        {totalCount > 0 && (
+                          <View style={styles.recipeMetaItem}>
+                            <Ionicons
+                              name="basket-outline"
+                              size={14}
+                              color={
+                                isFullMatch
+                                  ? Colors.systemSuccess
+                                  : Colors.brandSecondary
+                              }
+                            />
+                            <Text
+                              style={[
+                                styles.recipeMetaText,
+                                isFullMatch && styles.recipeMetaTextSuccess,
+                              ]}
+                            >
+                              {usedCount}/{totalCount}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyState}>
               <Ionicons
-                name="add-circle-outline"
-                size={28}
-                color={Colors.brandPrimary}
+                name="restaurant-outline"
+                size={48}
+                color={Colors.textSecondary}
               />
+              <Text style={styles.emptyText}>
+                No recipes available. Try adding more products!
+              </Text>
             </View>
-            <Text style={styles.actionTitle}>Add Product</Text>
-            <Text style={styles.actionSubtitle}>Manual entry</Text>
-          </Pressable>
+          )}
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundPrimary,
+    backgroundColor: Colors.backgroundSecondary,
   },
   content: {
-    padding: 24,
+    padding: 20,
     paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.brandPrimary,
-    marginTop: 10,
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
   profileButton: {
     padding: 4,
   },
-  statsContainer: {
+  alexaPill: {
     flexDirection: 'row',
-    marginBottom: 32,
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.brandSecondary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    gap: 8,
+    marginBottom: 24,
+    shadowColor: Colors.brandSecondary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginHorizontal: 6,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  statValue: {
-    fontSize: 32,
+  alexaPillPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
+  },
+  alexaPillIcon: {
+    width: 20,
+    height: 20,
+    tintColor: '#fff',
+  },
+  alexaPillText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  summaryCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  summaryIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: `${Colors.brandSecondary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  summaryContent: {
+    flex: 1,
+  },
+  summaryValue: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginTop: 8,
+    color: Colors.brandPrimary,
+    marginBottom: 2,
   },
-  statLabel: {
-    fontSize: 12,
+  summaryLabel: {
+    fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
+  },
+  categoriesSection: {
+    marginBottom: 20,
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  categoryIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  scanBanner: {
+    backgroundColor: `${Colors.brandPrimary}10`,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scanIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.brandPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    shadowColor: Colors.brandPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scanTextContainer: {
+    flex: 1,
+  },
+  scanTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  scanSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
   section: {
     marginBottom: 24,
@@ -280,78 +504,99 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 16,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  actionCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginBottom: 16,
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  actionTitle: {
-    fontSize: 16,
     fontWeight: '600',
     color: Colors.textPrimary,
-    marginBottom: 4,
   },
-  actionSubtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  sectionLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.brandPrimary,
   },
   loadingSection: {
     padding: 40,
     alignItems: 'center',
   },
   recipeCard: {
-    width: 160,
-    marginRight: 12,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    width: 200,
+    marginRight: 16,
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 20,
     overflow: 'hidden',
-    elevation: 2,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+    position: 'relative',
+  },
+  matchBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: Colors.systemSuccess,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
+    shadowColor: Colors.systemSuccess,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
+    elevation: 3,
+  },
+  matchBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
   },
   recipeImage: {
     width: '100%',
-    height: 120,
+    height: 140,
+    backgroundColor: Colors.backgroundSecondary,
   },
   recipeInfo: {
-    padding: 12,
+    padding: 14,
   },
   recipeTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.textPrimary,
+    marginBottom: 10,
+    height: 40,
+  },
+  recipeMetaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  recipeMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  recipeMetaText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  recipeMetaTextSuccess: {
+    color: Colors.systemSuccess,
+    fontWeight: '600',
+  },
+  emptyState: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
-    padding: 20,
+    marginTop: 12,
+    lineHeight: 20,
   },
 });

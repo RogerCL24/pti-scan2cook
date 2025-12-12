@@ -11,7 +11,6 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
-import Button from '../components/Button';
 import { uploadImageToOcr } from '../services/ocr';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -49,7 +48,6 @@ export default function ScanScreen({ navigation }) {
     })();
   }, []);
 
-  // Tomar foto con la cámara
   const takePhoto = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -77,7 +75,6 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  // Seleccionar imagen de la galería
   const pickImage = async () => {
     try {
       const { status } =
@@ -116,7 +113,6 @@ export default function ScanScreen({ navigation }) {
     }
   };
 
-  // Escanear ticket con backend (siempre usando Gemini AI)
   const onScan = async () => {
     if (!image) {
       Alert.alert('No image', 'Upload an image first');
@@ -135,7 +131,6 @@ export default function ScanScreen({ navigation }) {
         return;
       }
 
-      // Guardar en historial antes de navegar
       await saveHistoryEntry({
         id: Date.now(),
         ts: new Date().toISOString(),
@@ -167,185 +162,195 @@ export default function ScanScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Scan Receipt</Text>
-        <Text style={styles.headerSubtitle}>
-          Take a clear photo or select from gallery
-        </Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Scan Receipt</Text>
+          <Text style={styles.headerSubtitle}>
+            Take a clear photo or select from gallery
+          </Text>
+        </View>
       </View>
 
-      {/* HISTORIAL */}
-      {history.length > 0 && !image && (
-        <View style={styles.historySection}>
-          <View style={styles.historyHeader}>
-            <Text style={styles.historyTitle}>Recent scans</Text>
-            <Pressable
-              onPress={async () => {
-                await AsyncStorage.removeItem(HISTORY_KEY);
-                setHistory([]);
-              }}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={20}
-                color={Colors.systemError}
-              />
-            </Pressable>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {history.map((item) => (
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HISTORIAL */}
+        {history.length > 0 && !image && (
+          <View style={styles.historySection}>
+            <View style={styles.historyHeader}>
+              <Text style={styles.historyTitle}>Recent Scans</Text>
               <Pressable
-                key={item.id}
-                style={styles.historyItem}
-                onPress={() => setImage({ uri: item.image })}
-              >
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.historyImage}
-                />
-                <Text style={styles.historyCount}>{item.count} items</Text>
-                <Text numberOfLines={1} style={styles.historyNames}>
-                  {item.names}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* PREVISUALIZACIÓN DE IMAGEN */}
-      {image && (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: image.uri }} style={styles.image} />
-          <Pressable style={styles.removeButton} onPress={() => setImage(null)}>
-            <Ionicons
-              name="close-circle"
-              size={32}
-              color={Colors.systemError}
-            />
-          </Pressable>
-        </View>
-      )}
-
-      {/* BOTONES */}
-      <View style={styles.buttonsContainer}>
-        {!image ? (
-          <View style={styles.actionRow}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.actionButtonPrimary,
-                pressed && styles.actionButtonPressed,
-              ]}
-              onPress={takePhoto}
-            >
-              <View style={[styles.iconWrapper, styles.iconWrapperPrimary]}>
-                <Ionicons name="camera-outline" size={22} color="#fff" />
-              </View>
-              <Text style={styles.actionButtonText}>Take Photo</Text>
-              <Text style={styles.actionSubText}>Use device camera</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                styles.actionButtonSecondary,
-                pressed && styles.actionButtonPressed,
-              ]}
-              onPress={pickImage}
-            >
-              <View style={[styles.iconWrapper, styles.iconWrapperSecondary]}>
-                <Ionicons name="images-outline" size={22} color="#fff" />
-              </View>
-              <Text style={styles.actionButtonText}>From Gallery</Text>
-              <Text style={styles.actionSubText}>Choose an existing image</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <Pressable
-              style={[
-                styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-              ]}
-              onPress={onScan}
-              disabled={loading}
-            >
-              <Ionicons
-                name={loading ? 'hourglass-outline' : 'scan-outline'}
-                size={22}
-                color="#fff"
-              />
-              <Text style={styles.primaryButtonText}>
-                {loading ? 'Scanning...' : 'Scan Receipt'}
-              </Text>
-            </Pressable>
-            <View style={styles.secondaryRow}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.secondaryButton,
-                  styles.secondaryButtonAlt,
-                  pressed && styles.secondaryButtonPressed,
-                ]}
-                onPress={() => setImage(null)}
-              >
-                <Ionicons
-                  name="refresh"
-                  size={18}
-                  color={Colors.brandSecondary}
-                />
-                <Text style={styles.secondaryButtonText}>Change image</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.secondaryButton,
-                  styles.secondaryButtonDanger,
-                  pressed && styles.secondaryButtonPressed,
-                ]}
-                onPress={() => {
-                  setImage(null);
-                  Alert.alert('Reset', 'Image cleared.');
+                onPress={async () => {
+                  await AsyncStorage.removeItem(HISTORY_KEY);
+                  setHistory([]);
                 }}
               >
                 <Ionicons
-                  name="close-circle-outline"
-                  size={18}
+                  name="trash-outline"
+                  size={20}
                   color={Colors.systemError}
                 />
-                <Text style={styles.secondaryButtonText}>Remove</Text>
               </Pressable>
             </View>
-          </>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {history.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.historyItem}
+                  onPress={() => setImage({ uri: item.image })}
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.historyImage}
+                  />
+                  <View style={styles.historyInfo}>
+                    <Text style={styles.historyCount}>{item.count} items</Text>
+                    <Text numberOfLines={1} style={styles.historyNames}>
+                      {item.names}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
         )}
-      </View>
-    </ScrollView>
+
+        {/* PREVISUALIZACIÓN DE IMAGEN */}
+        {image ? (
+          <View style={styles.imageCard}>
+            <Image source={{ uri: image.uri }} style={styles.image} />
+            <Pressable
+              style={styles.removeButton}
+              onPress={() => setImage(null)}
+            >
+              <Ionicons name="close-circle" size={32} color="#fff" />
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name="scan-outline"
+                size={64}
+                color={Colors.brandPrimary}
+              />
+            </View>
+            <Text style={styles.emptyTitle}>No Image Selected</Text>
+            <Text style={styles.emptySubtitle}>
+              Take a photo or choose from your gallery to get started
+            </Text>
+          </View>
+        )}
+
+        {/* BOTONES */}
+        {!image ? (
+          <View style={styles.actionButtons}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionCard,
+                styles.actionCardPrimary,
+                pressed && styles.actionCardPressed,
+              ]}
+              onPress={takePhoto}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="camera" size={28} color={Colors.brandPrimary} />
+              </View>
+              <Text style={styles.actionTitle}>Take Photo</Text>
+              <Text style={styles.actionSubtitle}>Use device camera</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionCard,
+                styles.actionCardSecondary,
+                pressed && styles.actionCardPressed,
+              ]}
+              onPress={pickImage}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons
+                  name="images"
+                  size={28}
+                  color={Colors.brandSecondary}
+                />
+              </View>
+              <Text style={styles.actionTitle}>From Gallery</Text>
+              <Text style={styles.actionSubtitle}>Choose existing image</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.scanActions}>
+            <Pressable
+              style={[styles.scanButton, loading && styles.scanButtonDisabled]}
+              onPress={onScan}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Ionicons name="hourglass-outline" size={20} color="#fff" />
+                  <Text style={styles.scanButtonText}>Scanning...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="scan" size={20} color="#fff" />
+                  <Text style={styles.scanButtonText}>Scan Receipt</Text>
+                </>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={styles.changeButton}
+              onPress={() => setImage(null)}
+            >
+              <Ionicons name="refresh" size={18} color={Colors.brandPrimary} />
+              <Text style={styles.changeButtonText}>Change Image</Text>
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundPrimary,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 20,
+    backgroundColor: Colors.backgroundSecondary,
   },
   headerContainer: {
-    marginBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: Colors.backgroundPrimary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerContent: {
+    gap: 4,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.brandPrimary,
-    marginTop: 10,
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
   headerSubtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
   historySection: {
     marginBottom: 24,
@@ -358,141 +363,180 @@ const styles = StyleSheet.create({
   },
   historyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   historyItem: {
-    width: 120,
+    width: 140,
     marginRight: 12,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.backgroundPrimary,
     borderRadius: 12,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: Colors.backgroundSecondary,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   historyImage: {
     width: '100%',
-    height: 70,
-    borderRadius: 8,
-    marginBottom: 6,
+    height: 100,
     backgroundColor: Colors.backgroundSecondary,
+  },
+  historyInfo: {
+    padding: 10,
   },
   historyCount: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.brandPrimary,
+    marginBottom: 2,
   },
   historyNames: {
     fontSize: 11,
     color: Colors.textSecondary,
   },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 24,
-    borderRadius: 12,
+  imageCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: Colors.backgroundSecondary,
-    elevation: 2,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: 400,
     resizeMode: 'contain',
+    backgroundColor: Colors.backgroundSecondary,
   },
   removeButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 20,
+    padding: 4,
   },
-  buttonsContainer: {
-    marginTop: 8,
-    marginBottom: 32,
-    gap: 16,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
-    gap: 6,
-  },
-  actionButtonPrimary: {
-    backgroundColor: '#fff',
-    borderColor: Colors.brandPrimary,
-  },
-  actionButtonSecondary: {
-    backgroundColor: '#fff',
-    borderColor: Colors.brandSecondary,
-  },
-  actionButtonPressed: {
-    opacity: 0.85,
-  },
-  iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+  emptyState: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 20,
+    padding: 40,
     alignItems: 'center',
-    marginBottom: 4,
-  },
-  iconWrapperPrimary: {
-    backgroundColor: Colors.brandPrimary,
-  },
-  iconWrapperSecondary: {
-    backgroundColor: Colors.brandSecondary,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  actionSubText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  primaryButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: Colors.brandPrimary,
-    paddingVertical: 16,
-    borderRadius: 48,
-    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
     elevation: 2,
   },
-  primaryButtonDisabled: { opacity: 0.75 },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  secondaryRow: { flexDirection: 'row', gap: 14 },
-  secondaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 6,
-    borderRadius: 32,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: `${Colors.brandPrimary}15`,
     alignItems: 'center',
-    borderWidth: 2,
-    backgroundColor: '#fff',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  secondaryButtonAlt: {
-    borderColor: Colors.brandSecondary,
-  },
-  secondaryButtonDanger: {
-    borderColor: Colors.systemError,
-  },
-  secondaryButtonPressed: { opacity: 0.85 },
-  secondaryButtonText: {
-    fontSize: 13,
+  emptyTitle: {
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  actionButtons: {
+    gap: 16,
+  },
+  actionCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  actionCardPrimary: {
+    borderWidth: 2,
+    borderColor: `${Colors.brandPrimary}30`,
+  },
+  actionCardSecondary: {
+    borderWidth: 2,
+    borderColor: `${Colors.brandSecondary}30`,
+  },
+  actionCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  actionIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  scanActions: {
+    gap: 12,
+  },
+  scanButton: {
+    backgroundColor: Colors.brandPrimary,
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: Colors.brandPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scanButtonDisabled: {
+    opacity: 0.7,
+  },
+  scanButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  changeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 12,
+  },
+  changeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.brandPrimary,
   },
 });

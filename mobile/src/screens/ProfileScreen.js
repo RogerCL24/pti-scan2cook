@@ -8,6 +8,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,97 +43,343 @@ export default function ProfileScreen({ navigation }) {
     'U';
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContainer}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstLetter.toUpperCase()}</Text>
-          </View>
-          <Text style={styles.name}>{user?.name || 'User'}</Text>
-          <Text style={styles.email}>{user?.email || 'email@domain.com'}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.item, pressed && styles.pressed]}
-            disabled
-          >
-            <Text style={styles.itemText}>Edit profile</Text>
-            <Text style={styles.itemNote}>Coming soon</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={handleLogout}
-            disabled={loggingOut}
-            style={({ pressed }) => [
-              styles.logoutBtn,
-              loggingOut && styles.logoutDisabled,
-              pressed && !loggingOut && styles.pressed,
-            ]}
-          >
-            {loggingOut ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.logoutText}>Sign out</Text>
-            )}
-          </Pressable>
+    <View style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.headerContainer}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerSubtitle}>Manage your account</Text>
         </View>
       </View>
-    </ScrollView>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* USER CARD */}
+        <View style={styles.userCard}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{firstLetter.toUpperCase()}</Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.name}>{user?.name || 'User'}</Text>
+              <Text style={styles.email}>
+                {user?.email || 'email@domain.com'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ACCOUNT SECTION */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Settings</Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingsItem,
+              pressed && styles.settingsItemPressed,
+            ]}
+            disabled
+          >
+            <View style={styles.settingsItemLeft}>
+              <View style={styles.settingsIcon}>
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={Colors.brandPrimary}
+                />
+              </View>
+              <View style={styles.settingsItemText}>
+                <Text style={styles.settingsItemTitle}>Edit Profile</Text>
+                <Text style={styles.settingsItemSubtitle}>Coming soon</Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={Colors.textSecondary}
+            />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingsItem,
+              pressed && styles.settingsItemPressed,
+            ]}
+            disabled
+          >
+            <View style={styles.settingsItemLeft}>
+              <View style={styles.settingsIcon}>
+                <Ionicons
+                  name="shield-outline"
+                  size={20}
+                  color={Colors.brandPrimary}
+                />
+              </View>
+              <View style={styles.settingsItemText}>
+                <Text style={styles.settingsItemTitle}>Privacy & Security</Text>
+                <Text style={styles.settingsItemSubtitle}>Coming soon</Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={Colors.textSecondary}
+            />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingsItem,
+              pressed && styles.settingsItemPressed,
+            ]}
+            disabled
+          >
+            <View style={styles.settingsItemLeft}>
+              <View style={styles.settingsIcon}>
+                <Ionicons
+                  name="help-circle-outline"
+                  size={20}
+                  color={Colors.brandPrimary}
+                />
+              </View>
+              <View style={styles.settingsItemText}>
+                <Text style={styles.settingsItemTitle}>Help & Support</Text>
+                <Text style={styles.settingsItemSubtitle}>Coming soon</Text>
+              </View>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={Colors.textSecondary}
+            />
+          </Pressable>
+        </View>
+
+        {/* ABOUT SECTION */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About</Text>
+
+          <View style={styles.aboutItem}>
+            <Text style={styles.aboutItemLabel}>App Version</Text>
+            <Text style={styles.aboutItemValue}>1.3.0</Text>
+          </View>
+
+          <View style={styles.aboutItem}>
+            <Text style={styles.aboutItemLabel}>App Name</Text>
+            <Text style={styles.aboutItemValue}>Scan2Cook</Text>
+          </View>
+        </View>
+
+        {/* LOGOUT BUTTON */}
+        <Pressable
+          onPress={handleLogout}
+          disabled={loggingOut}
+          style={({ pressed }) => [
+            styles.logoutButton,
+            loggingOut && styles.logoutButtonDisabled,
+            pressed && !loggingOut && styles.logoutButtonPressed,
+          ]}
+        >
+          {loggingOut ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="log-out-outline" size={20} color="#fff" />
+              <Text style={styles.logoutButtonText}>Sign Out</Text>
+            </>
+          )}
+        </Pressable>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1 },
-  content: {
+  container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 90,
-    paddingBottom: 32,
-    backgroundColor: Colors.backgroundPrimary,
+    backgroundColor: Colors.backgroundSecondary,
   },
-  header: { alignItems: 'center', marginBottom: 24 },
+  headerContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: Colors.backgroundPrimary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerContent: {
+    gap: 4,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  userCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  avatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: Colors.brandPrimary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  avatarText: { color: '#fff', fontSize: 34, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  email: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
-  section: { marginTop: 16 },
-  sectionTitle: {
-    fontSize: 13,
+  avatarText: {
+    color: '#fff',
+    fontSize: 28,
     fontWeight: '700',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  email: {
+    fontSize: 13,
     color: Colors.textSecondary,
-    marginBottom: 8,
   },
-  item: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
+  section: {
+    marginBottom: 28,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.backgroundSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  itemText: { fontSize: 16, color: Colors.textPrimary, fontWeight: '600' },
-  itemNote: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
-  pressed: { opacity: 0.85 },
-  logoutBtn: {
-    backgroundColor: '#E53935',
+  settingsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.backgroundPrimary,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  logoutDisabled: { opacity: 0.7 },
-  logoutText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  settingsItemPressed: {
+    backgroundColor: Colors.backgroundSecondary,
+  },
+  settingsItemLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: `${Colors.brandPrimary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsItemText: {
+    flex: 1,
+  },
+  settingsItemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  settingsItemSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  aboutItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundPrimary,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  aboutItemLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.textPrimary,
+  },
+  aboutItemValue: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: Colors.systemError,
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: Colors.systemError,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop: 8,
+  },
+  logoutButtonDisabled: {
+    opacity: 0.6,
+    shadowOpacity: 0.1,
+    elevation: 2,
+  },
+  logoutButtonPressed: {
+    opacity: 0.9,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
