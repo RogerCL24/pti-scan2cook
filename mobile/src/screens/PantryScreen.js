@@ -23,6 +23,25 @@ import {
   updateProduct,
 } from '../services/products';
 
+const STORAGE_CATEGORIES = [
+  {
+    id: 'All',
+    label: 'All',
+  },
+  {
+    id: 'pantry',
+    label: 'Pantry',
+  },
+  {
+    id: 'fridge',
+    label: 'Fridge',
+  },
+  {
+    id: 'freezer',
+    label: 'Freezer',
+  },
+];
+
 export default function PantryScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,23 +51,13 @@ export default function PantryScreen({ navigation }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', category: '' });
 
-  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
-
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
   const lastLoadRef = useRef(null);
 
-  const categories = [
-    'All',
-    ...new Set(products.map((p) => p.category).filter(Boolean)),
-  ];
-
   const closeEditModal = () => {
     setEditingProduct(null);
     setEditForm({ name: '', category: '' });
-    setShowNewCategoryInput(false);
-    setNewCategory('');
   };
 
   const loadProducts = useCallback(async () => {
@@ -140,21 +149,6 @@ export default function PantryScreen({ navigation }) {
     setCategoryPickerOpen(false);
   };
 
-  const handleCreateCategory = () => {
-    if (!newCategory.trim()) {
-      Alert.alert('Error', 'Category name cannot be empty');
-      return;
-    }
-    if (categories.includes(newCategory.trim())) {
-      Alert.alert('Error', 'Category already exists');
-      return;
-    }
-    setEditForm({ ...editForm, category: newCategory.trim() });
-    setNewCategory('');
-    setShowNewCategoryInput(false);
-    setCategoryPickerOpen(false);
-  };
-
   const filteredProducts =
     selectedCategory === 'All'
       ? products
@@ -242,34 +236,29 @@ export default function PantryScreen({ navigation }) {
           </Pressable>
         </View>
 
-        {/* CATEGORY CHIPS */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScrollView}
-          contentContainerStyle={styles.categoryContainer}
-        >
-          {categories.map((category) => (
+        {/* STORAGE CATEGORY FILTERS */}
+        <View style={styles.categoryContainer}>
+          {STORAGE_CATEGORIES.map((category) => (
             <Pressable
-              key={category}
+              key={category.id}
               style={[
                 styles.categoryChip,
-                selectedCategory === category && styles.categoryChipActive,
+                selectedCategory === category.id && styles.categoryChipActive,
               ]}
-              onPress={() => setSelectedCategory(category)}
+              onPress={() => setSelectedCategory(category.id)}
             >
               <Text
                 style={[
                   styles.categoryChipText,
-                  selectedCategory === category &&
+                  selectedCategory === category.id &&
                     styles.categoryChipTextActive,
                 ]}
               >
-                {category}
+                {category.label}
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       {/* LIST */}
@@ -291,12 +280,12 @@ export default function PantryScreen({ navigation }) {
             <Text style={styles.emptyText}>
               {selectedCategory === 'All'
                 ? 'Your pantry is empty'
-                : `No ${selectedCategory} products`}
+                : `No products in ${STORAGE_CATEGORIES.find((c) => c.id === selectedCategory)?.label}`}
             </Text>
             <Text style={styles.emptySubtext}>
               {selectedCategory === 'All'
                 ? 'Scan a receipt or add products manually'
-                : 'Try selecting a different category'}
+                : 'Try selecting a different storage location'}
             </Text>
           </View>
         }
@@ -336,7 +325,7 @@ export default function PantryScreen({ navigation }) {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Category</Text>
+                <Text style={styles.inputLabel}>Storage Location</Text>
                 <Pressable
                   style={styles.categorySelector}
                   onPress={() => setCategoryPickerOpen((v) => !v)}
@@ -347,7 +336,8 @@ export default function PantryScreen({ navigation }) {
                       !editForm.category && styles.categorySelectorPlaceholder,
                     ]}
                   >
-                    {editForm.category || 'Select category'}
+                    {STORAGE_CATEGORIES.find((c) => c.id === editForm.category)
+                      ?.label || 'Select storage location'}
                   </Text>
                   <Ionicons
                     name={categoryPickerOpen ? 'chevron-up' : 'chevron-down'}
@@ -362,18 +352,17 @@ export default function PantryScreen({ navigation }) {
                       style={styles.categoryList}
                       keyboardShouldPersistTaps="handled"
                     >
-                      {categories
-                        .filter((cat) => cat !== 'All')
-                        .map((category) => (
+                      {STORAGE_CATEGORIES.filter((cat) => cat.id !== 'All').map(
+                        (category) => (
                           <Pressable
-                            key={category}
+                            key={category.id}
                             style={styles.categoryOption}
-                            onPress={() => handleSelectCategory(category)}
+                            onPress={() => handleSelectCategory(category.id)}
                           >
                             <Text style={styles.categoryOptionText}>
-                              {category}
+                              {category.label}
                             </Text>
-                            {editForm.category === category && (
+                            {editForm.category === category.id && (
                               <Ionicons
                                 name="checkmark"
                                 size={20}
@@ -381,40 +370,7 @@ export default function PantryScreen({ navigation }) {
                               />
                             )}
                           </Pressable>
-                        ))}
-
-                      {showNewCategoryInput ? (
-                        <View style={styles.newCategoryContainer}>
-                          <TextInput
-                            style={styles.newCategoryInput}
-                            placeholder="New category name"
-                            value={newCategory}
-                            onChangeText={setNewCategory}
-                            autoFocus
-                          />
-                          <Pressable
-                            style={styles.createCategoryButton}
-                            onPress={handleCreateCategory}
-                          >
-                            <Text style={styles.createCategoryButtonText}>
-                              Create
-                            </Text>
-                          </Pressable>
-                        </View>
-                      ) : (
-                        <Pressable
-                          style={styles.addCategoryButton}
-                          onPress={() => setShowNewCategoryInput(true)}
-                        >
-                          <Ionicons
-                            name="add-circle-outline"
-                            size={20}
-                            color={Colors.brandPrimary}
-                          />
-                          <Text style={styles.addCategoryButtonText}>
-                            Add new category
-                          </Text>
-                        </Pressable>
+                        )
                       )}
                     </ScrollView>
                   </View>
@@ -428,8 +384,6 @@ export default function PantryScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {/* CATEGORY SELECT (inline, no second Modal) */}
     </View>
   );
 }
@@ -480,22 +434,31 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   addButtonPressed: { transform: [{ scale: 0.95 }] },
-  categoryScrollView: { marginHorizontal: -20 },
-  categoryContainer: { paddingHorizontal: 20, gap: 8 },
-  categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.backgroundSecondary,
-    marginRight: 8,
+  categoryContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 8,
   },
-  categoryChipActive: { backgroundColor: Colors.brandPrimary },
+  categoryChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    backgroundColor: Colors.backgroundSecondary,
+  },
+  categoryChipActive: {
+    backgroundColor: Colors.brandPrimary,
+  },
   categoryChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
-  categoryChipTextActive: { color: '#fff' },
+  categoryChipTextActive: {
+    color: '#fff',
+  },
   list: { padding: 20 },
   productCard: {
     flexDirection: 'row',

@@ -19,21 +19,23 @@ import { getRandomSuggestions, refreshSuggestions } from '../services/recipes';
 
 const CATEGORIES = [
   {
-    id: 'Dairy',
-    label: 'Dairy',
-    icon: 'nutrition-outline',
+    id: 'Pantry',
+    label: 'Pantry',
+    icon: 'file-tray-full-outline',
     color: Colors.brandPrimary,
   },
-  { id: 'Fruits', label: 'Fruits', icon: 'leaf-outline', color: '#FF6B6B' },
   {
-    id: 'Vegetables',
-    label: 'Veggies',
-    icon: 'leaf-outline',
-    color: '#51CF66',
+    id: 'Fridge',
+    label: 'Fridge',
+    icon: 'thermometer-outline',
+    color: '#4DABF7',
   },
-  { id: 'Meat', label: 'Meat', icon: 'fish-outline', color: '#FF8787' },
-  { id: 'Bakery', label: 'Bakery', icon: 'pizza-outline', color: '#FAB005' },
-  { id: 'Beverages', label: 'Drinks', icon: 'cafe-outline', color: '#4DABF7' },
+  {
+    id: 'Freezer',
+    label: 'Freezer',
+    icon: 'snow',
+    color: '#748FFC',
+  },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -165,31 +167,29 @@ export default function HomeScreen({ navigation }) {
           />
         </Pressable>
 
-        {/* CATEGORY QUICK ACCESS */}
-        <View style={styles.categoriesSection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CATEGORIES.map((category) => (
-              <Pressable
-                key={category.id}
-                style={styles.categoryItem}
-                onPress={() => handleCategoryPress(category.id)}
+        {/* STORAGE LOCATIONS */}
+        <View style={styles.storageSection}>
+          {CATEGORIES.map((category) => (
+            <Pressable
+              key={category.id}
+              style={styles.categoryItem}
+              onPress={() => handleCategoryPress(category.id)}
+            >
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: `${category.color}15` },
+                ]}
               >
-                <View
-                  style={[
-                    styles.categoryIcon,
-                    { backgroundColor: `${category.color}15` },
-                  ]}
-                >
-                  <Ionicons
-                    name={category.icon}
-                    size={24}
-                    color={category.color}
-                  />
-                </View>
-                <Text style={styles.categoryLabel}>{category.label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+                <Ionicons
+                  name={category.icon}
+                  size={28}
+                  color={category.color}
+                />
+              </View>
+              <Text style={styles.categoryLabel}>{category.label}</Text>
+            </Pressable>
+          ))}
         </View>
 
         {/* SCAN BANNER */}
@@ -438,25 +438,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
   },
-  categoriesSection: {
+  storageSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
+    gap: 12,
   },
   categoryItem: {
+    flex: 1,
     alignItems: 'center',
-    marginRight: 16,
   },
   categoryIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   categoryLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.textPrimary,
+    textAlign: 'center',
   },
   scanBanner: {
     backgroundColor: `${Colors.brandPrimary}10`,
